@@ -1,0 +1,28 @@
+# Keybindings require three things to be fully defined: A selector that is
+# matched against the focused element, the keystroke and the command to
+# execute.
+#
+# Below is a basic keybinding which registers on all platforms by applying to
+# the root workspace element.
+
+# For more detailed documentation see
+# https://atom.io/docs/latest/behind-atom-keymaps-in-depth
+'atom-workspace':
+  'cmd-|': 'my-package:open-directory'
+'atom-text-editor.dir':
+  'h': 'my-package:open-parent-directory'
+  'l': 'my-package:open-child'
+  '~': 'my-package:go-home'
+  'cmd-r': 'my-package:reload-directory'
+  'shift-o': 'my-package:open-external'
+  'v': 'my-package:activate-linewise-visual-mode'
+  'V': 'my-package:activate-linewise-visual-mode'
+  'f': 'my-package:toggle-selected-and-next-row'
+  'shift-y shift-y': 'my-package:copy-names-to-clipboard'
+  'shift-y f': 'my-package:copy-fullpaths-to-clipboard'
+  'shift-y shift-f': 'my-package:copy-fullpaths-to-clipboard'
+
+  # disable some vim-mode-plus keybindings
+  'c': 'my-package:noop'
+  'd': 'my-package:noop'
+  'i': 'my-package:noop'

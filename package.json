@@ -1,0 +1,26 @@
+{
+  "name": "my-package",
+  "main": "./lib/my-package",
+  "version": "0.0.1",
+  "description": "Dired like view for navigating directories in Atom",
+  "keywords": [],
+  "repository": "https://github.com/atom/my-package",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "package-deps": ["vim-mode-plus"],
+  "dependencies": {
+    "atom-coffee2-transpiler": "../atom-coffee2-transpiler",
+    "atom-package-deps": "^5.1.0",
+    "execa": "^4.0.0",
+    "moment": "^2.24.0",
+    "passwd-user": "^3.0.0"
+  },
+  "atomTranspilers": [
+    {
+      "glob": "**/*.coffee",
+      "transpiler": "atom-coffee2-transpiler"
+    }
+  ]
+}

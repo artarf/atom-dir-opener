@@ -1,0 +1,53 @@
+// The ui-variables file is provided by base themes provided by Atom.
+//
+// See https://github.com/atom/atom-dark-ui/blob/master/styles/ui-variables.less
+// for a full listing of what's available.
+@import "ui-variables";
+@import "syntax-variables";
+
+// Insert mode blinking
+// atom-text-editor.dir .cursors.blink-off .cursor {
+//   opacity: 0 !important;
+// }
+// atom-text-editor.dir.is-focused .cursor {
+//   opacity: 0 !important;
+// }
+atom-text-editor.dir {
+  &.vim-mode-plus.normal-mode .cursor {
+      border: 0px !important;
+      background-color: inherit !important;
+  }
+  div.scroll-view {
+    margin-top: 3px;
+    margin-left: 8px;
+  }
+  .line.cursor-line {
+    background-color: mix(@syntax-background-color,@syntax-selection-color, 20%);
+    outline: 1px dotted mix(@syntax-selection-color,@syntax-text-color, 80%);
+  }
+  // background-color: darken(@syntax-background-color, 3%);
+  span.mode {
+    color: gray;
+  }
+  span.user {
+    color: pink;
+  }
+  span.group {
+    color: pink;
+  }
+  span.size {
+    color: beige;
+  }
+  span.date {
+    color: gray;
+  }
+  span.link {
+    color: seagreen;
+  }
+  span.directory {
+    color: cornflowerblue;
+  }
+}
+
+.my-package {
+}
