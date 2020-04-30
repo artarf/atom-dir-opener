@@ -118,6 +118,18 @@ copyNamesToClipboard = (event)->
   editor = event.currentTarget.getModel()
   clearSelections(editor)
 
+gitReset = (event)->
+  file = fileAtCursor(event)
+  return unless repo = git.utils file
+  _file = repo.relativize file
+  _base = path.dirname _file
+  getSelectedEntries(event).forEach ([file])->
+    _file = path.join _base, file
+    repo.checkoutHead _file
+  editor = event.currentTarget.getModel()
+  uri = editor._myPackage.uri
+  setDir editor, uri, true
+
 gitToggleStaged = (event)->
   file = fileAtCursor(event)
   return unless repo = git.utils file
@@ -155,6 +167,7 @@ module.exports =
   'my-package:copy-fullpaths-to-clipboard': copyFullpathsToClipboard
   'my-package:toggle-selected-and-next-row': toggleRow
   'my-package:git-toggle-staged': gitToggleStaged
+  'my-package:git-reset-head': gitReset
   'my-package:activate-linewise-visual-mode': (event)->
     return if event.currentTarget.getModel().getCursorBufferPosition().row < 3
     atom.commands.dispatch event.currentTarget, 'vim-mode-plus:activate-linewise-visual-mode'
