@@ -1,7 +1,7 @@
 {
   "name": "my-package",
   "main": "./lib/my-package",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Dired like view for navigating directories in Atom",
   "keywords": [],
   "repository": "https://github.com/atom/my-package",
