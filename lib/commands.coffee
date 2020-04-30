@@ -121,10 +121,14 @@ gitToggleStaged = (event)->
   file = fileAtCursor(event)
   return unless repo = git.utils file
   _file = repo.relativize file
-  if repo.isPathStaged _file
-    git.restore file
-  else
-    repo.add _file
+  _base = path.dirname _file
+  dir = path.dirname file
+  getSelectedEntries(event).forEach ([file])->
+    _file = path.join _base, file
+    if repo.isPathStaged _file
+      git.restore path.join dir, file
+    else
+      repo.add _file
 
 copyFullpathsToClipboard = (event)->
   editor = event.currentTarget.getModel()
