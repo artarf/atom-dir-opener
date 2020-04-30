@@ -109,6 +109,7 @@ openChild = (event)->
     editor._myPackage.current = null
     setDir editor, newuri
   else
+    atom.workspace.paneForItem(editor)?.destroyItem(editor)
     atom.workspace.open newuri
 
 copyNamesToClipboard = (event)->
