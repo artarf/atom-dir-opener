@@ -123,12 +123,18 @@ gitToggleStaged = (event)->
   _file = repo.relativize file
   _base = path.dirname _file
   dir = path.dirname file
+  restore = []
   getSelectedEntries(event).forEach ([file])->
     _file = path.join _base, file
     if repo.isPathStaged _file
-      git.restore path.join dir, file
+      restore.push file
     else
       repo.add _file
+  editor = event.currentTarget.getModel()
+  uri = editor._myPackage.uri
+  if restore.length
+    await git 'restore', '--staged', restore..., dir
+  setDir editor, uri, true
 
 copyFullpathsToClipboard = (event)->
   editor = event.currentTarget.getModel()
