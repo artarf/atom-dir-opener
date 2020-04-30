@@ -1,8 +1,5 @@
 {CompositeDisposable} = require 'atom'
 path = require 'path'
-# utils = require './utils'
-# require './format'
-# require './commands'
 
 defaultDir = ->
   os = require 'os'
