@@ -47,6 +47,17 @@ atom-text-editor.dir {
   span.directory {
     color: cornflowerblue;
   }
+  span.git {
+    // @syntax-color-removed
+    // @syntax-color-renamed
+    color: @syntax-color-modified;
+    &.staged {
+      color: @syntax-color-added;
+    }
+    &.ignored {
+      color: @text-color-subtle;
+    }
+  }
 }
 
 .my-package {

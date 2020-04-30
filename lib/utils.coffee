@@ -2,6 +2,7 @@ fs = require 'fs'
 _fs = fs.promises
 path = require 'path'
 X = require 'execa'
+git = require './git'
 
 
 ftype = (stats)->
@@ -34,10 +35,22 @@ repoForPath = (goalPath) ->
 listFiles = (dir, ignore)->
   # core.ignoredNames
   entries = await _fs.readdir dir, encoding: 'utf8'
-  if ignore and repo = repoForPath(dir)
-    entries.filter (p)-> not repo.isPathIgnored(p)
-  else
-    entries
+  return entries unless repo = repoForPath(dir)
+  _base = repo.relativize dir
+  index = {}
+  entries = entries.map (p, i)->
+    index[p] = i
+    [p, repo.repo.getStatus(path.join _base, p) or -1]
+  return entries if repo.repo.isIgnored(_base)
+  gitfiles = await git.ls(dir)
+  for p in gitfiles
+    if p of index
+      i = index[p]
+      if entries[i][1] is -1
+        entries[i][1] = 0
+    else
+      entries.push [p, repo.repo.getStatus path.join _base, p]
+  entries
 
 splitter = (out, sep)->
   out.split('\n').map (row)-> row.split(sep)

@@ -37,7 +37,7 @@ Also it's nice to have familiar `ls -al` format to _see_ directory contents.
 - [ ] Cycling projects
 - [ ] Changing owner/group
 - [ ] Changing mode (toggle with keys `c m _ x`, `c m _ w`, `c m _ r` where \_ is none / `u` / `g` / `o`)
-- [ ] Show git status
+- [x] Show git status
 - [ ] Toggle selected files to/from index
 - [ ] Toggle selected files to/from ignored
 

@@ -2,6 +2,7 @@ fs = require 'fs'
 _fs = fs.promises
 path = require 'path'
 formatEntry = require './format'
+git = require './git'
 {leftpad, rightpad, listFiles} = require './utils'
 
 fields = ['mode', 'nlink', 'user', 'group', 'size', 'date']
@@ -17,6 +18,15 @@ clearMarkers = (pkg)->
     for m in pkg[field].getMarkers()
       m.destroy()
 
+gitClasses =
+  ' M': 'modified'
+  'M ': 'modified staged'
+  ' D': 'removed'
+  'D ': 'removed staged'
+  '!!': 'ignored'
+  'A ': 'new staged'
+  '??': 'new'
+
 paintColors = (editor, x, startRow, lengths, colspace)->
   {entries} = editor._myPackage
   for row, i in x
@@ -29,12 +39,17 @@ paintColors = (editor, x, startRow, lengths, colspace)->
       start = end + colspace
     [_, stats] = entries[i]
     start = 6 * colspace + lengths.slice(0, 6).reduce plus, 0
-    end = start + x[i][6].length
+    if x[i][6].trim()
+      range = editor.buffer.clipRange {start: [r, start], end: [r, start + 2]}
+      marker = editor.markBufferRange(range)
+      editor.decorateMarker marker, type:'text', class: 'git ' + gitClasses[x[i][6]]
+    start += colspace + 2
+    end = start + x[i][7].length
     range = editor.buffer.clipRange {start: [r, start], end: [r, end]}
     {directory, link, filename} = editor._myPackage
-    if stats.isDirectory()
+    if stats?.isDirectory()
       directory.markRange range, exclusive: true
-    else if stats.isSymbolicLink()
+    else if stats?.isSymbolicLink()
       if row[row.length - 1].endsWith '/'
         linkrange = editor.buffer.clipRange {start: [r, end + 5], end: [r, 999]}
         directory.markRange linkrange, exclusive: true
@@ -42,29 +57,35 @@ paintColors = (editor, x, startRow, lengths, colspace)->
     else
       filename.markRange range, exclusive: true
 
-getStats = (p)->
+getStats = ([p, status])->
+  return [path.basename(p), undefined, undefined, status] if status > 0 and git.status.deleted status
   stat = await _fs.lstat p
-  return [path.basename(p), stat] unless stat.isSymbolicLink()
+  return [path.basename(p), stat, undefined, status] unless stat.isSymbolicLink()
   link = await _fs.readlink(p)
   try
     followed = await _fs.stat(p)
     link += '/' if followed.isDirectory() and not link.endsWith '/'
-    [path.basename(p), stat, link]
+    [path.basename(p), stat, link, status]
   catch e
     # Exception thrown when link target does not exist
-    [path.basename(p), stat, link]
+    [path.basename(p), stat, link, status]
 
 readDir = (uri)->
   try
     entries = await listFiles uri, true
-    entries = entries.map (e)-> path.join uri, e
+    entries = entries.map (e)->
+      if Array.isArray e
+        e[0] = path.join uri, e[0]
+        e
+      else
+        [path.join uri, e]
     await Promise.all entries.map (e)-> await getStats e
   catch e
     console.error e.stack
     atom.notifications.addError e.message, dismissable: true
     return
 
-isDir = ([_, stats, link])-> stats.isDirectory() or (link?.endsWith('/') ? false)
+isDir = ([_, stats, link])-> stats?.isDirectory() or (link?.endsWith('/') ? false)
 
 module.exports = (editor, uri, force = false)->
   {_myPackage} = editor
@@ -77,7 +98,7 @@ module.exports = (editor, uri, force = false)->
   origrow = editor.getCursorBufferPosition().row
   return unless entries = await readDir uri
   entries.sort (a,b)-> isDir(b) - isDir(a) or a[0].localeCompare b[0]
-  entries.unshift (await getStats uri), (await getStats path.dirname uri)
+  entries.unshift (await getStats [uri]), (await getStats [path.dirname uri])
   entries[0][0] = "."
   entries[1][0] = ".."
   _myPackage.entries = entries
