@@ -2,6 +2,15 @@ path = require 'path'
 setDir = require './set-dir'
 os = require 'os'
 electron = require 'electron'
+git = require './git'
+
+fileAtCursor = (event)->
+  editor = event.currentTarget.getModel()
+  {row} = editor.getCursorBufferPosition()
+  return if row < 3
+  {uri, entries} = editor._myPackage
+  [name, stats, link] = entries[row-1]
+  path.join uri, name
 
 openExternal = (event)->
   editor = event.currentTarget.getModel()
@@ -108,6 +117,15 @@ copyNamesToClipboard = (event)->
   editor = event.currentTarget.getModel()
   clearSelections(editor)
 
+gitToggleStaged = (event)->
+  file = fileAtCursor(event)
+  return unless repo = git.utils file
+  _file = repo.relativize file
+  if repo.isPathStaged _file
+    git.restore file
+  else
+    repo.add _file
+
 copyFullpathsToClipboard = (event)->
   editor = event.currentTarget.getModel()
   {uri} = editor._myPackage
@@ -125,6 +143,7 @@ module.exports =
   'my-package:copy-names-to-clipboard': copyNamesToClipboard
   'my-package:copy-fullpaths-to-clipboard': copyFullpathsToClipboard
   'my-package:toggle-selected-and-next-row': toggleRow
+  'my-package:git-toggle-staged': gitToggleStaged
   'my-package:activate-linewise-visual-mode': (event)->
     return if event.currentTarget.getModel().getCursorBufferPosition().row < 3
     atom.commands.dispatch event.currentTarget, 'vim-mode-plus:activate-linewise-visual-mode'

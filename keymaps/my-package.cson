@@ -21,6 +21,7 @@
   'shift-y shift-y': 'my-package:copy-names-to-clipboard'
   'shift-y f': 'my-package:copy-fullpaths-to-clipboard'
   'shift-y shift-f': 'my-package:copy-fullpaths-to-clipboard'
+  'g i a': 'my-package:git-toggle-staged'
 
   # disable some vim-mode-plus keybindings
   'c': 'my-package:noop'

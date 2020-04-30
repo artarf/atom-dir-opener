@@ -17,6 +17,8 @@ git = (args..., dir)->
   else
     execa 'git', args, cwd:dir
 
+git2 = (args..., p)-> git [args..., path.basename(p)], path.dirname(p)
+
 repoForPath = (goalPath) ->
   for projectPath, i in atom.project.getPaths()
     if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
@@ -25,6 +27,8 @@ repoForPath = (goalPath) ->
 
 git.pull = (dir)-> git 'pull', dir
 git.push = (dir)-> git 'push', dir
+git.restore = (p)-> git2 'restore', '--staged', p
+git.add = (p)-> git2 'add', p
 git.ls = (dir)->
   r = await git 'ls-tree --name-only -z HEAD', dir
   r.stdout.slice(0, -1).split '\0'

@@ -38,7 +38,7 @@ Also it's nice to have familiar `ls -al` format to _see_ directory contents.
 - [ ] Changing owner/group
 - [ ] Changing mode (toggle with keys `c m _ x`, `c m _ w`, `c m _ r` where \_ is none / `u` / `g` / `o`)
 - [x] Show git status
-- [ ] Toggle selected files to/from index
+- [x] Toggle selected files to/from index
 - [ ] Toggle selected files to/from ignored
 
 ## Limitations
@@ -61,6 +61,7 @@ Also it's nice to have familiar `ls -al` format to _see_ directory contents.
 - `my-package:copy-fullpaths-to-clipboard`
 - `my-package:toggle-selected-and-next-row`
 - `my-package:activate-linewise-visual-mode`
+- `my-package:git-toggle-staged`
 
 ## Default keybindings
 
@@ -78,3 +79,4 @@ Also it's nice to have familiar `ls -al` format to _see_ directory contents.
       'shift-y shift-y': 'my-package:copy-names-to-clipboard'
       'shift-y f': 'my-package:copy-fullpaths-to-clipboard'
       'shift-y shift-f': 'my-package:copy-fullpaths-to-clipboard'
+      'g i a': 'my-package:git-toggle-staged'
