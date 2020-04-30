@@ -1,6 +1,5 @@
 "strict"
 
-
 {TextBuffer} = require 'atom'
 fs = require('fs').promises
 path = require 'path'
