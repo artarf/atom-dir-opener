@@ -33,7 +33,7 @@ module.exports = MyPackage =
     once = atom.workspace.observeTextEditors (e)->
       if (not e.getPath?()) and e.getTitle() is 'untitled'
         console.log "remove untitled"
-        atom.workspace.getActivePane()?.close()
+        atom.workspace.paneForItem(e)?.destroyItem(e)
         if dir = atom.project.rootDirectories[0]
           atom.workspace.open dir.path + '/'
       setTimeout -> once.dispose()
