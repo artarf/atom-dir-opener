@@ -1,6 +1,7 @@
 { GitRepository } = require "atom"
 execa = require 'execa'
 path = require 'path'
+fp = require 'lodash/fp'
 
 git = (args..., dir)->
   timeout = 3000
@@ -43,41 +44,13 @@ git.ls = (dir)->
   r.stdout.slice(0, -1).split '\0'
 git.utils = (dir)-> repoForPath(dir).repo
 git.repo = (dir)-> repoForPath(dir)
-git.status =
-  modified: (s)-> s & modifiedStatusFlags
-  ignored: (s)-> s & statusIgnored
-  staged: (s)-> s & indexStatusFlags
-  newfile: (s)-> s & newStatusFlags
-  deleted: (s)-> s & deletedStatusFlags
+git.status = (dir)-> git 'status', '--porcelain', '--ignored', dir
+git.parseStatus = (stdout)->
+  fp.mapValues((x)-> fp.fromPairs fp.map toNameAndFlag, x) byDir(stdout.split '\n')
 
-statusIndexNew = 1 << 0
-statusIndexModified = 1 << 1
-statusIndexDeleted = 1 << 2
-statusIndexRenamed = 1 << 3
-statusIndexTypeChange = 1 << 4
-statusWorkingDirNew = 1 << 7
-statusWorkingDirModified = 1 << 8
-statusWorkingDirDelete = 1 << 9
-statusWorkingDirTypeChange = 1 << 10
-statusIgnored = 1 << 14
-
-modifiedStatusFlags =
-  statusWorkingDirModified |
-  statusIndexModified |
-  statusWorkingDirDelete |
-  statusIndexDeleted |
-  statusWorkingDirTypeChange |
-  statusIndexTypeChange
-
-newStatusFlags = statusWorkingDirNew | statusIndexNew
-
-deletedStatusFlags = statusWorkingDirDelete | statusIndexDeleted
-
-indexStatusFlags =
-  statusIndexNew |
-  statusIndexModified |
-  statusIndexDeleted |
-  statusIndexRenamed |
-  statusIndexTypeChange
+filepart = (statusRow)-> statusRow.slice 3
+flag = (statusRow)-> statusRow.slice 0, 2
+byDir = fp.groupBy (statusRow)-> path.dirname filepart statusRow
+toNameAndFlag = (x)-> [path.basename(filepart x), flag x]
 
 module.exports = git
