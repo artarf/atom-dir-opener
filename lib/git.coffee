@@ -1,5 +1,3 @@
-{ GitRepository } = require "atom"
-execa = require 'execa'
 path = require 'path'
 fp = require 'lodash/fp'
 
@@ -20,11 +18,10 @@ git = (args..., dir)->
     execa 'git', args, {cwd:dir, timeout}
 
 git2 = (args..., p)-> git [args..., path.basename(p)], path.dirname(p)
-git.safe = ->
+git.safe = (process)->
   try
-    await git arguments...
+    await process
   catch error
-    console.error error
     @lastError = error
     undefined
 
