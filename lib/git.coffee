@@ -39,6 +39,7 @@ git.add = (p)-> git2 'add', p
 git.ls = (dir)->
   r = await git 'ls-tree --name-only -z HEAD', dir
   r.stdout.slice(0, -1).split '\0'
+git.root = (dir)-> git 'rev-parse', '--git-dir', dir
 git.utils = (dir)-> repoForPath(dir).repo
 git.repo = (dir)-> repoForPath(dir)
 git.status = (dir)-> git 'status', '--porcelain', '--ignored', dir
