@@ -3,19 +3,20 @@ execa = require 'execa'
 path = require 'path'
 
 git = (args..., dir)->
+  timeout = 3000
   if typeof dir is 'object'
     dir = dir.getWorkingDirectory()
   if arguments.length is 2
     if Array.isArray args[0]
-      execa 'git', args[0], cwd:dir
+      execa 'git', args[0], {cwd:dir, timeout}
     else if typeof args[0] is 'string'
-      execa 'git', args[0].split(' '), cwd:dir
+      execa 'git', args[0].split(' '), {cwd:dir, timeout}
     else
       throw new Error "when 2 arguments, first argument must be a string or an array"
   else if arguments.length is 1
     throw new Error "At least 2 arguments needed"
   else
-    execa 'git', args, cwd:dir
+    execa 'git', args, {cwd:dir, timeout}
 
 git2 = (args..., p)-> git [args..., path.basename(p)], path.dirname(p)
 git.safe = ->
