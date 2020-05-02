@@ -18,6 +18,14 @@ git = (args..., dir)->
     execa 'git', args, cwd:dir
 
 git2 = (args..., p)-> git [args..., path.basename(p)], path.dirname(p)
+git.safe = ->
+  try
+    await git arguments...
+  catch error
+    console.error error
+    @lastError = error
+    undefined
+
 
 repoForPath = (goalPath) ->
   for projectPath, i in atom.project.getPaths()
