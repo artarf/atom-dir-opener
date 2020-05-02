@@ -1,3 +1,5 @@
+{GitRepository} = require 'atom'
+execa = require 'execa'
 path = require 'path'
 fp = require 'lodash/fp'
 
