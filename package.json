@@ -9,7 +9,9 @@
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
-  "package-deps": ["vim-mode-plus"],
+  "package-deps": [
+    "vim-mode-plus"
+  ],
   "dependencies": {
     "atom-coffee2-transpiler": "../atom-coffee2-transpiler",
     "atom-package-deps": "^5.1.0",
