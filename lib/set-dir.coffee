@@ -58,7 +58,7 @@ paintColors = (editor, x, startRow, lengths, colspace)->
       filename.markRange range, exclusive: true
 
 getStats = ([p, status])->
-  return [path.basename(p), undefined, undefined, status] if status > 0 and git.status.deleted status
+  return [path.basename(p), undefined, undefined, status] if status?[1] is 'D'
   stat = await _fs.lstat p
   return [path.basename(p), stat, undefined, status] unless stat.isSymbolicLink()
   link = await _fs.readlink(p)
@@ -78,7 +78,7 @@ readDir = (uri)->
         e[0] = path.join uri, e[0]
         e
       else
-        [path.join uri, e]
+        [path.join(uri, e), '  ']
     await Promise.all entries.map (e)-> await getStats e
   catch e
     console.error e.stack
@@ -98,7 +98,7 @@ module.exports = (editor, uri, force = false)->
   origrow = editor.getCursorBufferPosition().row
   return unless entries = await readDir uri
   entries.sort (a,b)-> isDir(b) - isDir(a) or a[0].localeCompare b[0]
-  entries.unshift (await getStats [uri]), (await getStats [path.dirname uri])
+  entries.unshift (await getStats [uri, '  ']), (await getStats [path.dirname(uri), '  '])
   entries[0][0] = "."
   entries[1][0] = ".."
   _myPackage.entries = entries

@@ -26,30 +26,23 @@ fflags = (n)-> flagset(n >> 6) + flagset(n >> 3) + flagset(n)
 leftpad = (s, n, ch=' ')-> ch.repeat(n - s.length) + s
 rightpad = (s, n, ch=' ')-> s + ch.repeat(n - s.length)
 
-repoForPath = (goalPath) ->
-  for projectPath, i in atom.project.getPaths()
-    if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
-      return atom.project.getRepositories()[i]
-  null
-
 listFiles = (dir, ignore)->
   # core.ignoredNames
+  if tmp = await git.safe git.status dir
+    repo = git.repo(dir)
+    _base = repo.relativize(dir) or "."
+    gitstatus = git.parseStatus(tmp.stdout)[_base]
+  gitstatus ?= {}
+
   entries = await _fs.readdir dir, encoding: 'utf8'
-  return entries unless repo = repoForPath(dir)
-  _base = repo.relativize dir
-  index = {}
+  return entries unless repo
   entries = entries.map (p, i)->
-    index[p] = i
-    [p, repo.repo.getStatus(path.join _base, p) or -1]
-  return entries if repo.repo.isIgnored(_base)
-  gitfiles = await git.ls(dir)
-  for p in gitfiles
-    if p of index
-      i = index[p]
-      if entries[i][1] is -1
-        entries[i][1] = 0
-    else
-      entries.push [p, repo.repo.getStatus path.join _base, p]
+    ret = [p, gitstatus[p] ? '  ']
+    gitstatus[p] = null
+    ret
+  return entries if repo?.repo.isIgnored(_base)
+  for p, status of gitstatus when status
+    entries.push [p, status]
   entries
 
 splitter = (out, sep)->
