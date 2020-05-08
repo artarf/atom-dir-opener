@@ -25,6 +25,8 @@ Also it's nice to have familiar `ls -al` format to _see_ directory contents.
 - [x] Selecting multiple files
 - [x] Copy filenames of selected
 - [x] Prevents automatic `untitled` file
+- [x] Show git status
+- [x] Show branch
 - [ ] Config: whether to prevent `untitled`
 - [ ] Sorting options (backed by config option)
 - [ ] Hidden options .gitignore and atom-ignored-files (backed by config option)
@@ -37,7 +39,6 @@ Also it's nice to have familiar `ls -al` format to _see_ directory contents.
 - [ ] Cycling projects
 - [ ] Changing owner/group
 - [ ] Changing mode (toggle with keys `c m _ x`, `c m _ w`, `c m _ r` where \_ is none / `u` / `g` / `o`)
-- [x] Show git status
 - [x] Toggle selected files to/from index
 - [ ] Toggle selected files to/from ignored
 

@@ -233,6 +233,10 @@ paintColors = (editor, chunks, startRow, colspace, p)->
   window.requestAnimationFrame -> paintColors editor, chunks, startRow + 300, colspace, p
 
 writeGitStatus = (editor, status, stats, sortOrder, root)->
+  branch = git.parseBranch status
+  dir = editor.buffer.lineForRow 0
+  range = editor.buffer.clipRange [[0,0], [0, dir.length]]
+  editor.setTextInBufferRange range, "#{dir} (#{branch})", bypassReadOnly: true
   items = Object.entries(stats).sort comparers[sortOrder]
   status = git.parseStatus status
   p = editor.getPath()
