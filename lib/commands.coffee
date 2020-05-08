@@ -1,33 +1,29 @@
 path = require 'path'
-setDir = require './set-dir'
 os = require 'os'
 electron = require 'electron'
+_ = require 'lodash'
+{getFields} = require './utils'
 git = require './git'
+
+setDir = (editor, uri)-> editor.buffer.setPath uri
 
 fileAtCursor = (event)->
   editor = event.currentTarget.getModel()
   {row} = editor.getCursorBufferPosition()
   return if row < 3
-  {uri, entries} = editor._myPackage
-  [name, stats, link] = entries[row-1]
-  path.join uri, name
+  uri = editor.getPath()
+  path.normalize path.join uri, getFields(editor, row, ['name'])[0]
 
 openExternal = (event)->
   editor = event.currentTarget.getModel()
   {row} = editor.getCursorBufferPosition()
   return if row < 3
-  {uri, entries} = editor._myPackage
-  [name, stats, link] = entries[row-1]
-  electron.shell.openItem path.join uri, name
+  electron.shell.openItem fileAtCursor(event)
 
 # selectCurrent = (event)->
 #   return if event.currentTarget.getModel()?.getCursorBufferPosition().row < 3
 #   atom.commands.dispatch event.currentTarget, 'vim-mode-plus:activate-linewise-visual-mode'
 #   atom.commands.dispatch event.currentTarget, 'vim-mode-plus:toggle-persistent-selection'
-
-reload = (event)->
-  editor = event.currentTarget.getModel()
-  setDir editor, editor._myPackage.uri, true
 
 goHome = (event)->
   editor = event.currentTarget.getModel()
@@ -35,9 +31,8 @@ goHome = (event)->
 
 openParent = (event)->
   editor = event.currentTarget.getModel()
-  vimState(editor).clearPersistentSelections()
-  {uri} = editor._myPackage
-  setDir editor, path.dirname uri
+  # vimState(editor).clearPersistentSelections()
+  setDir editor, path.dirname editor.getPath()
 
 vimState = (editor)-> atom.packages.getActivePackage('vim-mode-plus').mainModule.getEditorState(editor)
 
@@ -72,13 +67,10 @@ toggleRow = (event)->
 
 clearSelections = (editor)->
   vimState(editor).clearPersistentSelections()
-  if -1 is editor.getSelections().indexOf (s)-> not s.getBufferRange().isEmpty()
-    pos = editor.getCursorBufferPosition()
-    range = editor.getSelectedBufferRanges().find (r)-> r.containsPoint pos
-    i = if pos.row is range.end.row and not range.isSingleLine() then -1 else 0
-    editor.clearSelections()
-    editor.setCursorBufferPosition pos.translate [i, 0]
-  else editor.clearSelections()
+  pos = editor.getCursorBufferPosition()
+  sel = editor.getSelectedBufferRange()
+  pos = pos.translate [-1, 0] if pos.isEqual(sel.end) and pos.isGreaterThan(sel.start)
+  editor.setCursorBufferPosition(pos)
 
 getSelectedEntries = (event)->
   editor = event.currentTarget.getModel()
@@ -87,33 +79,31 @@ getSelectedEntries = (event)->
   unless sels.length
     sels = editor.getSelectedBufferRanges()
   a = new Map
-  {uri, entries} = editor._myPackage
+  uri = editor.getPath()
   for {start, end} in sels
     for i in [start.row .. end.row - (end.column is 0)] by 1
-      a.set i - 1, entries[i - 1] if i > 2
+      a.set i, _.first getFields editor, i, ['name']
   unless a.size
-    i = sels[0].start.row
-    a.set i - 1, entries[i - 1] if i > 2
+    a.set 0, getFields(editor, sels[0].start.row, ['name'])[0]
   a
 
 openChild = (event)->
   editor = event.currentTarget.getModel()
-  {uri, entries} = editor._myPackage
+  uri = path.normalize editor.getPath()
   {row} = editor.getCursorBufferPosition()
-  return if row < 2
-  [name, stats, link] = entries[row-1]
-  return openParent event if name is '..'
-  vimState(editor).clearPersistentSelections()
-  newuri = path.join uri, name
-  if stats.isDirectory() or link?.endsWith path.sep
-    editor._myPackage.current = null
+  return if row < 1
+  [name, link] = getFields editor, row, ['name', 'link']
+  return unless name
+  return openParent event if name.startsWith '..'
+  newuri = path.normalize path.join uri, name
+  if (name + link).endsWith path.sep
     setDir editor, newuri
   else
-    atom.workspace.paneForItem(editor)?.destroyItem(editor)
-    atom.workspace.open newuri
+    if await atom.workspace.open newuri
+      atom.workspace.paneForItem(editor)?.destroyItem(editor)
 
 copyNamesToClipboard = (event)->
-  entries = Array.from getSelectedEntries(event).values(), (a)-> a[0]
+  entries = Array.from getSelectedEntries(event).values()
   atom.clipboard.write entries.join '\n'
   editor = event.currentTarget.getModel()
   clearSelections(editor)
@@ -123,36 +113,36 @@ gitReset = (event)->
   return unless repo = git.utils file
   _file = repo.relativize file
   _base = path.dirname _file
-  getSelectedEntries(event).forEach ([file])->
+  getSelectedEntries(event).forEach (file)->
     _file = path.join _base, file
     repo.checkoutHead _file
-  editor = event.currentTarget.getModel()
-  uri = editor._myPackage.uri
-  setDir editor, uri, true
 
 gitToggleStaged = (event)->
-  file = fileAtCursor(event)
+  return unless file = fileAtCursor(event)
   return unless repo = git.utils file
   _file = repo.relativize file
   _base = path.dirname _file
   dir = path.dirname file
   restore = []
-  getSelectedEntries(event).forEach ([file])->
+  dirs = []
+  getSelectedEntries(event).forEach (file)->
+    if file.endsWith path.sep
+      dirs.push file
+      return
     _file = path.join _base, file
     if repo.isPathStaged _file
       restore.push file
     else
       repo.add _file
-  editor = event.currentTarget.getModel()
-  uri = editor._myPackage.uri
   if restore.length
     await git 'restore', '--staged', restore..., dir
-  setDir editor, uri, true
+  if dirs.length
+    atom.notifications.addWarning "Directories not toggled: #{dirs.join ', '}", dismissable: true
 
 copyFullpathsToClipboard = (event)->
   editor = event.currentTarget.getModel()
-  {uri} = editor._myPackage
-  entries = Array.from getSelectedEntries(event).values(), (a)-> path.join uri, a[0]
+  uri = editor.getPath()
+  entries = Array.from getSelectedEntries(event), (a)-> path.join uri, a[1]
   atom.clipboard.write entries.join '\n'
   clearSelections(editor)
 
@@ -160,7 +150,6 @@ module.exports =
   'my-package:open-parent-directory': openParent
   'my-package:open-child': openChild
   'my-package:go-home': goHome
-  'my-package:reload-directory': reload
   'my-package:open-external': openExternal
   # 'my-package:select-current': selectCurrent
   'my-package:copy-names-to-clipboard': copyNamesToClipboard

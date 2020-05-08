@@ -1,9 +1,8 @@
 fs = require 'fs'
 _fs = fs.promises
 path = require 'path'
+_ = require 'lodash'
 X = require 'execa'
-git = require './git'
-
 
 ftype = (stats)->
   if stats.isBlockDevice() then 'b'
@@ -26,27 +25,30 @@ fflags = (n)-> flagset(n >> 6) + flagset(n >> 3) + flagset(n)
 leftpad = (s, n, ch=' ')-> ch.repeat(n - s.length) + s
 rightpad = (s, n, ch=' ')-> s + ch.repeat(n - s.length)
 
-listFiles = (dir, ignore)->
-  # core.ignoredNames
-  if tmp = await git.safe git.status dir
-    repo = git.repo(dir)
-    _base = repo.relativize(dir) or "."
-    gitstatus = git.parseStatus(tmp.stdout)[_base]
-  gitstatus ?= {}
-
-  entries = await _fs.readdir dir, encoding: 'utf8'
-  return entries unless repo
-  entries = entries.map (p, i)->
-    ret = [p, gitstatus[p] ? '  ']
-    gitstatus[p] = null
-    ret
-  return entries if repo?.repo.isIgnored(_base)
-  for p, status of gitstatus when status
-    entries.push [p, status]
-  entries
-
 splitter = (out, sep)->
   out.split('\n').map (row)-> row.split(sep)
+
+dirext = (link, stat)-> link + if stat.isDirectory() and not link.endsWith '/' then "/" else ""
+
+getStat = (dir, name)->
+  file = path.join dir, name
+  stat = await _fs.lstat file
+  return [dirext(name, stat), stat] unless stat.isSymbolicLink()
+  name += '//' + await _fs.readlink(file)
+  try
+    s = await _fs.stat(file)
+    [dirext(name, s), stat]
+  catch error
+    console.error error.message if error.code isnt 'ENOENT'
+    [name, stat]
+
+getStats = (dir)->
+  entries = await _fs.readdir(dir, encoding: 'utf8')
+  try
+    _.fromPairs await Promise.all entries.map (x)-> getStat(dir, x)
+  catch error
+    console.log e.stack
+    {}
 
 if process.platform is 'darwin'
   assoc = (map, [v, k])-> map.set parseInt(k), v.trim()
@@ -71,5 +73,17 @@ else if process.platform is 'linux'
     return console.error err.stack if err
     module.exports.users = mapSplitter(data)
 
+mFilter = (m, pred)-> val for val from m.values() when pred(val)
+
+getLayers = (editor, roles)->
+  mFilter editor.displayLayer.displayMarkerLayersById, (x)-> roles.includes x.bufferMarkerLayer.role
+
+getFields = (editor, row, roles)->
+  layers = _.keyBy getLayers(editor, roles), 'bufferMarkerLayer.role'
+  roles.map (role)->
+    unless x = layers[role]?.findMarkers(startBufferRow: row)?[0]
+      return ""
+    editor.getTextInBufferRange x.getBufferRange()
+
 users = groups = new Map
-module.exports = {ftype, fflags, leftpad, rightpad, listFiles, users, groups}
+module.exports = {ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getFields, getLayers}

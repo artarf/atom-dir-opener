@@ -13,7 +13,6 @@
   'h': 'my-package:open-parent-directory'
   'l': 'my-package:open-child'
   '~': 'my-package:go-home'
-  'cmd-r': 'my-package:reload-directory'
   'shift-o': 'my-package:open-external'
   'v': 'my-package:activate-linewise-visual-mode'
   'V': 'my-package:activate-linewise-visual-mode'

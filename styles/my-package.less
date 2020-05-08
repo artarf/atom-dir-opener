@@ -44,10 +44,15 @@ atom-text-editor.dir {
   span.link {
     color: seagreen;
   }
-  span.directory {
+  div.line.executable {
+    span.name {
+      color: green;
+    }
+  }
+  div.line.link-to-directory span.link, div.line.directory span.name {
     color: cornflowerblue;
   }
-  span.git {
+  span.gitstatus {
     // @syntax-color-removed
     // @syntax-color-renamed
     color: @syntax-color-modified;

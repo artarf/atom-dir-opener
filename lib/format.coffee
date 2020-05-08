@@ -1,9 +1,12 @@
 {ftype, fflags} = utils = require './utils'
-git = require './git'
-module.exports = ([name, stats, link, status])->
-  moment = require 'moment'
-  return ['','','','','','',status, name] unless stats
-  time = moment(stats.mtime).fromNow()
+timeFormat = git = null
+
+module.exports = ([name, stats])->
+  git ?= require './git'
+  timeFormat ?= require('speed-date')('YYYY-MM-DD HH:mm:ss')
+  return ['','','','','','','  ', name] unless stats
+  [name, link] = name.split '//'
+  time = timeFormat(stats.mtime)
   [
     ftype(stats) + fflags(stats.mode)
     String stats.nlink
@@ -11,7 +14,7 @@ module.exports = ([name, stats, link, status])->
     utils.groups.get(stats.gid) ? String stats.gid
     String stats.size
     time
-    status
-    name + if stats.isDirectory() then "/" else ""
-    if link then "-> " + link else ""
+    '  '
+    name
+    if link then '-> ' + link else ''
   ]
