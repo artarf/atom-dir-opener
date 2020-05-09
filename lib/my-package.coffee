@@ -280,7 +280,7 @@ writeStats = (editor, state, sortOrder, selected)->
   editor.setText text, bypassReadOnly: true
   if state.proj
     mark editor, [[1, 0], [1, state.proj.length]], 'project'
-  selectedRow ?= 2 + (items.length > 0)
+  selectedRow ?= 4 + (items.length > 0)
   editor.setCursorBufferPosition [selectedRow, 0]
   editor.element.scrollToTop() if selectedRow <= screenHeight(editor)
   paintColors editor, _.chunk(x, 300), 3, colspace, editor.getPath()
