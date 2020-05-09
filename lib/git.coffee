@@ -41,7 +41,7 @@ git.root = (dir)-> git 'rev-parse', '--absolute-git-dir', dir
 git.utils = (dir)-> repoForPath(dir).repo
 git.repo = (dir)-> repoForPath(dir)
 git.status = (dir)-> git 'status', '--porcelain', '--ignored', '--branch', dir
-git.parseBranch = (stdout)-> stdout.slice(3, stdout.indexOf '\n')
+git.parseBranch = (stdout)-> stdout.slice 3, if ~(i=stdout.indexOf '\n') then i
 git.parseStatus = (stdout)->
   fp.mapValues((x)-> fp.fromPairs fp.map toNameAndFlag, x) byDir fp.filter(nocomment) stdout.split '\n'
 
