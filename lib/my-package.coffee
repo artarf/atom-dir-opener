@@ -103,14 +103,14 @@ module.exports = MyPackage =
           if sortChanged or uriChanged or dirState.stats isnt state.stats
             state.sortOrder = @sortOrder
             state.stats = dirState.stats
-            if statsChanged = writeStats editor, dirState.stats, @sortOrder, updateHistory editor, state
+            if statsChanged = writeStats editor, dirState, @sortOrder, updateHistory editor, state
               state.gitStatus = null
               @scheduleUpdate()
           else if dirState.gitRoot
             if repo = @repositories.get dirState.gitRoot
               if statsChanged or sortChanged or uriChanged or repo.status isnt state.gitStatus
                 state.gitStatus = repo.status
-                writeGitStatus editor, repo.status, state.stats, @sortOrder, dirState.gitRoot
+                writeGitStatus editor, repo, state.stats, @sortOrder, dirState.gitRoot
         else
           @fetchDir p
           @fetchGit p
@@ -118,6 +118,7 @@ module.exports = MyPackage =
     return if @directories.get(path.resolve dir)?.stats?
     try
       if stats = await utils.getStats(dir)
+        proj = atom.project.getPaths().find (d)-> dir.startsWith d
         watch = @directories.get(path.resolve dir)?.watch ? fs.watch dir, (type, file)=>
           watch.close()
           p = path.resolve dir
@@ -125,7 +126,7 @@ module.exports = MyPackage =
             @reloadGit x
           @directories.delete p
           @scheduleUpdate()
-        @directories.set path.resolve(dir), {stats, watch}
+        @directories.set path.resolve(dir), {stats, watch, proj}
         @scheduleUpdate()
     catch e # revert editors with failing dir
       console.error e.message
@@ -232,13 +233,14 @@ paintColors = (editor, chunks, startRow, colspace, p)->
       editor.decorateMarker marker, type:'line', class: rowClasses.join ' '
   window.requestAnimationFrame -> paintColors editor, chunks, startRow + 300, colspace, p
 
-writeGitStatus = (editor, status, stats, sortOrder, root)->
-  branch = git.parseBranch status
-  dir = editor.buffer.lineForRow 0
-  range = editor.buffer.clipRange [[0,0], [0, dir.length]]
-  editor.setTextInBufferRange range, "#{dir} (#{branch})", bypassReadOnly: true
+writeGitStatus = (editor, repo, stats, sortOrder, root)->
+  mark editor, [[1, 0], [1, path.dirname(repo.root).length]], 'git-root'
+  branch = git.parseBranch repo.status
+  dir = editor.buffer.lineForRow 1
+  range = editor.buffer.clipRange [[1,dir.length], [1, dir.length]]
+  editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
   items = Object.entries(stats).sort comparers[sortOrder]
-  status = git.parseStatus status
+  status = git.parseStatus repo.status
   p = editor.getPath()
   relPath = p.slice (path.dirname root).length + p.endsWith(path.sep)
   relPath = relPath.slice(0, -1) if relPath.endsWith path.sep
@@ -247,14 +249,14 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
   layer = getLayers(editor, ['gitstatus'])[0]
   for [item], i in items
     item = item.slice(0, -1) if item.endsWith path.sep
-    if x = layer.findMarkers(startBufferRow: i + 3)?[0]
+    if x = layer.findMarkers(startBufferRow: i + 5)?[0]
       s = statuses[item] ? '  '
       range = x.getBufferRange()
       if s isnt editor.getTextInBufferRange range
-        editor.setTextInBufferRange x.getBufferRange(), s, bypassReadOnly: true
+        editor.setTextInBufferRange range, s, bypassReadOnly: true
 
-writeStats = (editor, stats, sortOrder, selected)->
-  items = Object.entries(stats).sort comparers[sortOrder]
+writeStats = (editor, state, sortOrder, selected)->
+  items = Object.entries(state.stats).sort comparers[sortOrder]
   dir = editor.getPath()
   dot = ['./', fs.lstatSync dir]
   dotdot = ['../', fs.lstatSync path.dirname dir]
@@ -268,19 +270,25 @@ writeStats = (editor, stats, sortOrder, selected)->
   for row, i in x
     name = row[row.length - 2]
     name = name.slice(0, -1) if name.endsWith path.sep
-    selectedRow = i+1 if selected is name
+    selectedRow = i+3 if selected is name
     for d,j in 'rlrrll'
       row[j] = padding[d](row[j], lengths[j])
   f = (row)-> row.join(' '.repeat colspace) + '\n'
-  text = dir + '\n' + x.map(f).join('')
+  text = '\n' + dir + '\n\n' + x.map(f).join('')
   return false if text is editor.buffer.getText()
   clearMarkers(editor)
   editor.setText text, bypassReadOnly: true
+  if state.proj
+    mark editor, [[1, 0], [1, state.proj.length]], 'project'
   selectedRow ?= 2 + (items.length > 0)
   editor.setCursorBufferPosition [selectedRow, 0]
   editor.element.scrollToTop() if selectedRow <= screenHeight(editor)
-  paintColors editor, _.chunk(x, 300), 1, colspace, editor.getPath()
+  paintColors editor, _.chunk(x, 300), 3, colspace, editor.getPath()
   return true
+
+mark = (editor, range, cls)->
+  marker = editor.markBufferRange range, invalidate:'never', exclusive: true
+  editor.decorateMarker marker, type:'text', class:cls
 
 screenHeight = (editor)->
   Math.floor editor.element.getHeight() / editor.getLineHeightInPixels()
