@@ -1,4 +1,3 @@
-{GitRepository} = require 'atom'
 execa = require 'execa'
 path = require 'path'
 fp = require 'lodash/fp'
@@ -32,7 +31,7 @@ repoForPath = (goalPath) ->
   for projectPath, i in atom.project.getPaths()
     if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
       return atom.project.getRepositories()[i]
-  GitRepository.open goalPath, {}
+  require('atom').GitRepository.open goalPath, {}
 
 git.pull = (dir)-> git 'pull', dir
 git.push = (dir)-> git 'push', dir
