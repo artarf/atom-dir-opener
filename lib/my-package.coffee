@@ -236,8 +236,8 @@ paintColors = (editor, chunks, startRow, colspace, p)->
 writeGitStatus = (editor, repo, stats, sortOrder, root)->
   mark editor, [[1, 0], [1, path.dirname(repo.root).length]], 'git-root'
   branch = git.parseBranch repo.status
-  dir = editor.buffer.lineForRow 1
-  range = editor.buffer.clipRange [[1,dir.length], [1, dir.length]]
+  dir = editor.getPath()
+  range = editor.buffer.clipRange [[1,dir.length], [1, (editor.buffer.lineForRow 1).length]]
   editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
   items = Object.entries(stats).sort comparers[sortOrder]
   status = git.parseStatus repo.status
