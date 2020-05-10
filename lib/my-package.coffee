@@ -2,7 +2,7 @@
 path = require 'path'
 fs = require 'fs'
 _ = require 'lodash'
-{getLayers, getFields, leftpad, rightpad, listFiles} = utils = require './utils'
+{getLengths, getLayers, getFields, leftpad, rightpad, listFiles} = utils = require './utils'
 git = require './git'
 formatEntry = require './format'
 
@@ -262,10 +262,7 @@ writeStats = (editor, state, sortOrder, selected)->
   dotdot = ['../', fs.lstatSync path.dirname dir]
   x = items.map formatEntry
   x.unshift formatEntry(dot), formatEntry(dotdot)
-  lengths = []
-  for row in x
-    for cell,i in row
-      lengths[i] = Math.max cell.length, lengths[i] ? 0
+  lengths = getLengths(x)
   colspace = 2
   for row, i in x
     name = row[row.length - 2]

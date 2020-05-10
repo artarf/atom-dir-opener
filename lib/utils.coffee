@@ -85,5 +85,12 @@ getFields = (editor, row, roles)->
       return ""
     editor.getTextInBufferRange x.getBufferRange()
 
+getLengths = (x)->
+  lengths = []
+  for row in x
+    for cell,i in row
+      lengths[i] = Math.max cell.length, lengths[i] ? 0
+  lengths
+
 users = groups = new Map
-module.exports = {ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getFields, getLayers}
+module.exports = {ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getLengths, getFields, getLayers}
