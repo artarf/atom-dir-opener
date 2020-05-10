@@ -36,25 +36,19 @@ toggleRow = (event)->
   return editor.moveDown(1) if row < 3
   {buffer} = editor
   range = buffer.clipRange [[row, 0], [row+1, 0]]
-  # console.log JSON.stringify range
   vimstate = vimState(editor)
   x = vimstate.persistentSelection.getMarkers().filter (m)-> m.getBufferRange().intersectsWith range, true
-  # console.log JSON.stringify vimstate.getPersistentSelectionBufferRanges()
   for marker in x
     r = marker.getBufferRange()
-    if r.containsRange(range) and not (r.start.isEqual(range.start) and r.end.isEqual(range.end))
-      # console.log 'a'
-      vimstate.persistentSelection.markBufferRange buffer.clipRange [r.start, range.start]
+    if r.isEqual(range)
+      marker.destroy()
+    else if r.containsRange(range) and not (r.start.isEqual(range.start) or r.end.isEqual(range.end))
+      marker.setBufferRange [r.start, range.start]
       vimstate.persistentSelection.markBufferRange buffer.clipRange [range.end, r.end]
-      marker.destroy()
     else if r.containsPoint range.start, true
-      # console.log 'b'
-      vimstate.persistentSelection.markBufferRange buffer.clipRange [range.start, r.start]
-      marker.destroy()
+      marker.setBufferRange [range.start, r.start]
     else
-      # console.log 'c'
-      vimstate.persistentSelection.markBufferRange buffer.clipRange [r.end, range.end]
-      marker.destroy()
+      marker.setBufferRange buffer.clipRange [r.end, range.end]
   unless x.length
     vimstate.persistentSelection.markBufferRange range
   editor.moveDown(1)
