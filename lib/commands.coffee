@@ -20,18 +20,12 @@ openExternal = (event)->
   return if row < 3
   electron.shell.openItem fileAtCursor(event)
 
-# selectCurrent = (event)->
-#   return if event.currentTarget.getModel()?.getCursorBufferPosition().row < 3
-#   atom.commands.dispatch event.currentTarget, 'vim-mode-plus:activate-linewise-visual-mode'
-#   atom.commands.dispatch event.currentTarget, 'vim-mode-plus:toggle-persistent-selection'
-
 goHome = (event)->
   editor = event.currentTarget.getModel()
   setDir editor, os.homedir()
 
 openParent = (event)->
   editor = event.currentTarget.getModel()
-  # vimState(editor).clearPersistentSelections()
   setDir editor, path.dirname editor.getPath()
 
 vimState = (editor)-> atom.packages.getActivePackage('vim-mode-plus').mainModule.getEditorState(editor)
@@ -151,7 +145,6 @@ module.exports =
   'my-package:open-child': openChild
   'my-package:go-home': goHome
   'my-package:open-external': openExternal
-  # 'my-package:select-current': selectCurrent
   'my-package:copy-names-to-clipboard': copyNamesToClipboard
   'my-package:copy-fullpaths-to-clipboard': copyFullpathsToClipboard
   'my-package:toggle-selected-and-next-row': toggleRow
