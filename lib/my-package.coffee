@@ -231,6 +231,7 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
   dir = editor.getPath()
   range = editor.buffer.clipRange [[1,dir.length], [1, (editor.buffer.lineForRow 1).length]]
   editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
+  editor.buffer.clearUndoStack()
   items = Object.entries(stats).sort comparers[sortOrder]
   status = git.parseStatus status
   p = editor.getPath()
@@ -251,6 +252,7 @@ writeGitStatusPart = (editor, statuses, layer, chunks, i, p)->
       range = x.getBufferRange()
       if s isnt editor.getTextInBufferRange range
         editor.setTextInBufferRange range, s, bypassReadOnly: true
+        editor.buffer.clearUndoStack()
   window.requestAnimationFrame -> writeGitStatusPart(editor, statuses, layer, chunks, i, p)
 
 writeStats = (editor, stats, proj, sortOrder, selected)->
@@ -277,6 +279,7 @@ writeStats = (editor, stats, proj, sortOrder, selected)->
   selectedRow ?= 4 + (items.length > 0)
   editor.setCursorBufferPosition [selectedRow, 0]
   editor.element.scrollToTop() if selectedRow <= screenHeight(editor)
+  editor.buffer.clearUndoStack()
   paintColors editor, _.chunk(x, 300), 3, colspace, editor.getPath()
   return true
 
