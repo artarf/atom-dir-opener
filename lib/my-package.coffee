@@ -258,10 +258,9 @@ writeGitStatus = (editor, repo, stats, sortOrder, root)->
 writeStats = (editor, state, sortOrder, selected)->
   items = Object.entries(state.stats).sort comparers[sortOrder]
   dir = editor.getPath()
-  dot = ['./', fs.lstatSync dir]
-  dotdot = ['../', fs.lstatSync path.dirname dir]
   x = items.map formatEntry
-  x.unshift formatEntry(dot), formatEntry(dotdot)
+  x.unshift formatEntry ['../', fs.lstatSync path.dirname dir]
+  x.unshift formatEntry ['./', fs.lstatSync dir]
   lengths = getLengths(x)
   colspace = 2
   for row, i in x
