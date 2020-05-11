@@ -4,8 +4,7 @@ fp = require 'lodash/fp'
 
 git = (args..., dir)->
   timeout = 3000
-  if typeof dir is 'object'
-    dir = dir.getWorkingDirectory()
+  dir = dir.getWorkingDirectory?() ? dir
   if arguments.length is 2
     if Array.isArray args[0]
       execa 'git', args[0], {cwd:dir, timeout}
