@@ -33,6 +33,7 @@ repoForPath = (goalPath) ->
   require('atom').GitRepository.open goalPath, {}
 
 git.pull = (dir)-> git 'pull', dir
+git.fetch = (dir)-> git 'fetch', dir
 git.push = (dir)-> git 'push', dir
 git.restore = (p)-> git2 'restore', '--staged', p
 git.add = (p)-> git2 'add', p
