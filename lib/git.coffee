@@ -17,6 +17,10 @@ git = (args..., dir)->
   else
     execa 'git', args, {cwd:dir, timeout}
 
+gitrc = (args..., cwd)->
+  result = await execa 'git', args, {cwd, timeout: 9000, stdout:'ignore', stderr:'ignore', reject:false}
+  result.exitCode isnt 0
+
 git2 = (args..., p)-> git [args..., path.basename(p)], path.dirname(p)
 git.safe = (process)->
   try
@@ -40,6 +44,8 @@ git.add = (p)-> git2 'add', p
 git.root = (dir)-> git 'rev-parse', '--absolute-git-dir', dir
 git.utils = (dir)-> repoForPath(dir).repo
 git.repo = (dir)-> repoForPath(dir)
+git.hasStaged = (dir)-> gitrc 'diff', '--no-ext-diff', '--cached', '--quiet', dir
+git.hasChanges = (dir)-> gitrc 'diff', '--no-ext-diff', '--quiet', dir
 git.balance = (dir)-> git 'rev-list', '--count', '--left-right', '@{upstream}...HEAD', dir
 git.status = (dir)-> git 'status', '--porcelain', '--ignored', '--branch', dir
 git.parseBranch = (stdout)-> stdout.slice 3, if ~(i=stdout.indexOf '\n') then i
