@@ -226,19 +226,16 @@ paintColors = (editor, chunks, startRow, colspace, p)->
   window.requestAnimationFrame -> paintColors editor, chunks, startRow + 300, colspace, p
 
 writeGitStatus = (editor, status, stats, sortOrder, root)->
-  mark editor, [[1, 0], [1, path.dirname(root).length]], 'git-root'
+  workdir = path.dirname(root)
+  mark editor, [[1, 0], [1, workdir.length]], 'git-root'
   branch = git.parseBranch status
   dir = editor.getPath()
   range = editor.buffer.clipRange [[1,dir.length], [1, (editor.buffer.lineForRow 1).length]]
   editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
   editor.buffer.clearUndoStack()
   items = Object.entries(stats).sort comparers[sortOrder]
-  status = git.parseStatus status
   p = editor.getPath()
-  relPath = p.slice (path.dirname root).length + p.endsWith(path.sep)
-  relPath = relPath.slice(0, -1) if relPath.endsWith path.sep
-  relPath = relPath or "."
-  return unless statuses = status[relPath]
+  statuses = git.parseStatus status, path.relative workdir, p
   layer = getLayers(editor, ['gitstatus'])[0]
   writeGitStatusPart(editor, statuses, layer, _.chunk(items, 50), 5, p)
 

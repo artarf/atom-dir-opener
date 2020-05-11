@@ -49,12 +49,28 @@ git.hasChanges = (dir)-> gitrc 'diff', '--no-ext-diff', '--quiet', dir
 git.balance = (dir)-> git 'rev-list', '--count', '--left-right', '@{upstream}...HEAD', dir
 git.status = (dir)-> git 'status', '--porcelain', '--ignored', '--branch', dir
 git.parseBranch = (stdout)-> stdout.slice 3, if ~(i=stdout.indexOf '\n') then i
-git.parseStatus = (stdout)->
-  fp.mapValues((x)-> fp.fromPairs fp.map toNameAndFlag, x) byDir fp.filter(nocomment) stdout.split '\n'
+git.parseStatus = (stdout, dirpath)->
+  dirpath += path.sep if dirpath and not dirpath.endsWith path.sep
+  b = ([n,f])-> n.startsWith dirpath
+  c = ([n,f])-> [n.slice(dirpath.length).split(path.sep)[0],f]
+  tmp = fp.map(c) fp.filter(b) fp.map toNameAndFlag, fp.filter(nocomment) stdout.split '\n'
+  fp.mapValues(d) fp.groupBy 0, tmp
 
 filepart = (statusRow)-> statusRow.slice 3
 flag = (statusRow)-> statusRow.slice 0, 2
 byDir = fp.groupBy (statusRow)-> path.dirname filepart statusRow
-toNameAndFlag = (x)-> [path.basename(filepart x), flag x]
+toNameAndFlag = (x)-> [filepart(x), flag(x)]
+d = (x)->
+  flags = x.reduce(mergeStatus, '  ')
+  return flags if flags is '!!' or flags is '??'
+  return '??' if flags is '?!' or flags is '!?'
+  return flags.replace('!', ' ') if /!/.test flags
+  flags
+mergeFlag = (a,b)->
+  if a is b then b
+  else if a >= 'A' and b >= 'A' then 'X'
+  else if a < b then b
+  else a
+mergeStatus = (r,[_, s])-> mergeFlag(r[0], s[0]) + mergeFlag(r[1], s[1])
 
 module.exports = git
