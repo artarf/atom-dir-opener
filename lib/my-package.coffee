@@ -64,9 +64,7 @@ module.exports = MyPackage =
             editor = require('./create-editor')(uri, fields)
             subscriptions = new CompositeDisposable
             subscriptions.add atom.commands.add editor.element, commands
-            subscriptions.add editor.onDidChangePath =>
-              @editors.get(editor).gitStatus = null
-              @scheduleUpdate()
+            subscriptions.add editor.onDidChangePath => @scheduleUpdate()
             subscriptions.add editor.onDidDestroy =>
               subscriptions.dispose()
               @editors.delete editor
@@ -94,80 +92,73 @@ module.exports = MyPackage =
   scheduleUpdate: ->
     @_timer ?= window.requestAnimationFrame =>
       @_timer = null
-      for [editor, state] from @editors
-        p = editor.getPath()
-        dirState = @directories.get(path.resolve p)
-        if dirState?.stats
-          sortChanged = @sortOrder isnt state.sortOrder
-          uriChanged = state.uri isnt p
-          if sortChanged or uriChanged or dirState.stats isnt state.stats
-            state.sortOrder = @sortOrder
-            state.stats = dirState.stats
-            if statsChanged = writeStats editor, dirState, @sortOrder, updateHistory editor, state
-              state.gitStatus = null
-              @scheduleUpdate()
-          else if dirState.gitRoot
-            if repo = @repositories.get dirState.gitRoot
-              if statsChanged or sortChanged or uriChanged or repo.status isnt state.gitStatus
-                state.gitStatus = repo.status
-                writeGitStatus editor, repo, state.stats, @sortOrder, dirState.gitRoot
-        else
-          @fetchDir p
-          @fetchGit p
-  fetchDir: (dir)->
-    return if @directories.get(path.resolve dir)?.stats?
+      for [editor, estate] from @editors
+        p = path.resolve editor.getPath() # drop trailing /
+        unless dirstate = @directories.get(p)
+          proj = atom.project.getPaths().find (d)-> p.startsWith d
+          dirstate = {stats: @getStats(p), gitRoot:@getGitRoot(p), proj}
+          @directories.set p, dirstate
+        return unless stats = await dirstate.stats
+        return if @_timer? # abort if new update was triggered while waiting
+        writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
+        if groot = await dirstate.gitRoot
+          return if @_timer?
+          if repo = @repositories.get(groot)
+            return unless status = await repo.status
+            return if @_timer?
+            writeGitStatus editor, status, stats, @sortOrder, groot
+
+  getStats: (dir)->
     try
-      if stats = await utils.getStats(dir)
-        proj = atom.project.getPaths().find (d)-> dir.startsWith d
-        watch = @directories.get(path.resolve dir)?.watch ? fs.watch dir, (type, file)=>
-          watch.close()
-          p = path.resolve dir
-          if x = @directories.get(p).gitRoot
-            @reloadGit x
-          @directories.delete p
-          @scheduleUpdate()
-        @directories.set path.resolve(dir), {stats, watch, proj}
-        @scheduleUpdate()
-    catch e # revert editors with failing dir
-      console.error e.message
+      stats = await utils.getStats(dir)
+      if dirstate = @directories.get(dir)
+        dirstate.watch?.close()
+        dirstate.watch = fs.watch dir, @dirwatch(dir)
+      return stats
+    catch e
+      @directories.delete(dir)
+      atom.notifications.addWarning dir, detail:e.message, dismissable: true
       for [editor, state] from @editors
-        if dir is editor.getPath()
-          state.history.push dir
+        if dir is path.resolve editor.getPath()
+          state.history.push editor.getPath()
           editor.buffer.setPath path.dirname dir
-  fetchGit: (dir)->
-    if dirstate = @directories.get(path.resolve dir)
-      if root = await git.safe git.root dir
-        root = root.stdout.trim()
-        root = path.normalize root
-        dirstate.gitRoot = root
-        @fetchGitRoot(root)
-      else
-        dirstate.gitRoot = null
-    else
-      window.requestAnimationFrame => @fetchGit(dir)
-
-  reloadGit: (root)->
-    @gitraf = null
-    return unless repo = @repositories.get(root)
-    repo.watch?.close()
-    @repositories.delete root
-    @fetchGitRoot(root)
-
-  fetchGitRoot: (root)->
-    return @scheduleUpdate() if @repositories.get(root)
-    workdir = path.dirname root
-    if status = await git.safe git.status workdir
-      @repositories.set root, tmp = {root, status: status.stdout}
       @scheduleUpdate()
-      # getting status causes index recreate after the command has returned
-      # => start watching after a short break
-      await sleep 100
-      # fetchGitRoot might have been called again during the break
-      if @repositories.get(root) is tmp
-        tmp.watch = fs.watch path.join(root, 'index'), (type, filename)=>
-          @gitraf ?= window.requestAnimationFrame => @reloadGit root
-    else
-      console.error git.lastError
+      return
+
+  getGitRoot: (dir)->
+    if root = await git.safe git.root dir
+      root = root.stdout.trim()
+      root = path.normalize root
+      if not @repositories.has root
+        gitstate = {root, status: @getGitStatus(root), stamp: Date.now()}
+        @repositories.set root, gitstate
+        # getting status causes index recreate after the command has returned
+        # => start watching after a short break
+        sleep(100).then => gitstate.watch = @gitwatch(root)
+      root
+
+  dirwatch: (p)-> (type, filename)=>
+    @directories.get(p).stats = @getStats(p)
+    @scheduleUpdate()
+
+  gitwatch: (root)->
+    watch = fs.watch path.join(root, 'index'), (type, filename)=>
+      throw new Error "wtf" unless gitstate = @repositories.get(root)
+      # close+recreate watch for every change, because underlying
+      # index file is possibly deleted and recreated (i.e. not modified)
+      gitstate.watch?.close()
+      root2 = await @getGitRoot(path.dirname root)
+      if root is root2
+        gitstate.status = @getGitStatus(root)
+        sleep(100).then => gitstate.watch = @gitwatch(root)
+      else
+        @repositories.delete root
+      @scheduleUpdate()
+    watch
+
+  getGitStatus: (root)->
+    return result.stdout if result = await git.safe git.status path.dirname root
+    atom.notifications.addWarning "Cannot get git status", detail:git.lastError.message, dismissable: true
   deactivate: ->
     @subscriptions?.dispose()
     subscriptions.dispose() for [_, {subscriptions}] from @editors
@@ -234,30 +225,36 @@ paintColors = (editor, chunks, startRow, colspace, p)->
       editor.decorateMarker marker, type:'line', class: rowClasses.join ' '
   window.requestAnimationFrame -> paintColors editor, chunks, startRow + 300, colspace, p
 
-writeGitStatus = (editor, repo, stats, sortOrder, root)->
-  mark editor, [[1, 0], [1, path.dirname(repo.root).length]], 'git-root'
-  branch = git.parseBranch repo.status
+writeGitStatus = (editor, status, stats, sortOrder, root)->
+  mark editor, [[1, 0], [1, path.dirname(root).length]], 'git-root'
+  branch = git.parseBranch status
   dir = editor.getPath()
   range = editor.buffer.clipRange [[1,dir.length], [1, (editor.buffer.lineForRow 1).length]]
   editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
   items = Object.entries(stats).sort comparers[sortOrder]
-  status = git.parseStatus repo.status
+  status = git.parseStatus status
   p = editor.getPath()
   relPath = p.slice (path.dirname root).length + p.endsWith(path.sep)
   relPath = relPath.slice(0, -1) if relPath.endsWith path.sep
   relPath = relPath or "."
   return unless statuses = status[relPath]
   layer = getLayers(editor, ['gitstatus'])[0]
-  for [item], i in items
+  writeGitStatusPart(editor, statuses, layer, _.chunk(items, 50), 5, p)
+
+writeGitStatusPart = (editor, statuses, layer, chunks, i, p)->
+  return if editor.getPath() isnt p or chunks.length is 0
+  items = chunks.shift()
+  for [item] in items
     item = item.slice(0, -1) if item.endsWith path.sep
-    if x = layer.findMarkers(startBufferRow: i + 5)?[0]
+    if x = layer.findMarkers(startBufferRow: i++)?[0]
       s = statuses[item] ? '  '
       range = x.getBufferRange()
       if s isnt editor.getTextInBufferRange range
         editor.setTextInBufferRange range, s, bypassReadOnly: true
+  window.requestAnimationFrame -> writeGitStatusPart(editor, statuses, layer, chunks, i, p)
 
-writeStats = (editor, state, sortOrder, selected)->
-  items = Object.entries(state.stats).sort comparers[sortOrder]
+writeStats = (editor, stats, proj, sortOrder, selected)->
+  items = Object.entries(stats).sort comparers[sortOrder]
   dir = editor.getPath()
   x = items.map formatEntry
   x.unshift formatEntry ['../', fs.lstatSync path.dirname dir]
@@ -275,8 +272,8 @@ writeStats = (editor, state, sortOrder, selected)->
   return false if text is editor.buffer.getText()
   clearMarkers(editor)
   editor.setText text, bypassReadOnly: true
-  if state.proj
-    mark editor, [[1, 0], [1, state.proj.length]], 'project'
+  if proj
+    mark editor, [[1, 0], [1, proj.length]], 'project'
   selectedRow ?= 4 + (items.length > 0)
   editor.setCursorBufferPosition [selectedRow, 0]
   editor.element.scrollToTop() if selectedRow <= screenHeight(editor)
