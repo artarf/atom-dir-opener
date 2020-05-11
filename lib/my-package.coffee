@@ -188,6 +188,7 @@ updateHistory = (editor, state)->
   if row > 0
     if name = getFields editor, row, ['name']
       selected = name[0]
+      selected = selected.slice 0, -1 if selected.endsWith path.sep
   if uri is state.uri
     # only updating changed file system => keep current selected item
     selected
