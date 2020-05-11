@@ -40,6 +40,7 @@ git.add = (p)-> git2 'add', p
 git.root = (dir)-> git 'rev-parse', '--absolute-git-dir', dir
 git.utils = (dir)-> repoForPath(dir).repo
 git.repo = (dir)-> repoForPath(dir)
+git.balance = (dir)-> git 'rev-list', '--count', '--left-right', '@{upstream}...HEAD', dir
 git.status = (dir)-> git 'status', '--porcelain', '--ignored', '--branch', dir
 git.parseBranch = (stdout)-> stdout.slice 3, if ~(i=stdout.indexOf '\n') then i
 git.parseStatus = (stdout)->
