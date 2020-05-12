@@ -53,8 +53,14 @@ git.parseStatus = (stdout, dirpath)->
   dirpath += path.sep if dirpath and not dirpath.endsWith path.sep
   b = ([n,f])-> n.startsWith dirpath
   c = ([n,f])-> [n.slice(dirpath.length).split(path.sep)[0],f]
-  tmp = fp.map(c) fp.filter(b) fp.map toNameAndFlag, fp.filter(nocomment) stdout.split '\n'
-  fp.mapValues(d) fp.groupBy 0, tmp
+  lines = fp.map toNameAndFlag, fp.filter(nocomment) stdout.split '\n'
+  tmp = fp.filter(b) lines
+  if tmp.length
+    fp.mapValues(d) fp.groupBy 0, tmp.map(c)
+  else if pp = path.dirname dirpath
+    # try to derive from parent
+    b = ([n,f])-> dirpath.startsWith n
+    fp.fromPairs fp.filter(b)(lines).sort().slice(-1)
 
 filepart = (statusRow)-> statusRow.slice 3
 flag = (statusRow)-> statusRow.slice 0, 2

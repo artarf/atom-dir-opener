@@ -236,8 +236,13 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
   items = Object.entries(stats).sort comparers[sortOrder]
   p = editor.getPath()
   statuses = git.parseStatus status, path.relative workdir, p
+  _status = (name)-> statuses[name] ? '  '
+  ks = Object.keys(statuses)
+  if ks.length is 1 and (ks[0] is '' or ks[0].endsWith path.sep)
+    _s = statuses[ks[0]]
+    _status = -> _s
   layer = getLayers(editor, ['gitstatus'])[0]
-  writeGitStatusPart(editor, statuses, layer, _.chunk(items, 50), 5, p)
+  writeGitStatusPart(editor, _status, layer, _.chunk(items, 50), 5, p)
 
 writeGitStatusPart = (editor, statuses, layer, chunks, i, p)->
   return if editor.getPath() isnt p or chunks.length is 0
@@ -245,7 +250,7 @@ writeGitStatusPart = (editor, statuses, layer, chunks, i, p)->
   for [item] in items
     item = item.slice(0, -1) if item.endsWith path.sep
     if x = layer.findMarkers(startBufferRow: i++)?[0]
-      s = statuses[item] ? '  '
+      s = statuses item
       range = x.getBufferRange()
       if s isnt editor.getTextInBufferRange range
         editor.setTextInBufferRange range, s, bypassReadOnly: true
