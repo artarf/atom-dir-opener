@@ -43,12 +43,13 @@ git.restore = (p)-> git2 'restore', '--staged', p
 git.add = (p)-> git2 'add', p
 git.root = (dir)-> git 'rev-parse', '--absolute-git-dir', dir
 git.utils = (dir)-> repoForPath(dir).repo
+git.remote = (dir)-> git 'remote', dir
+git.branch = (dir)-> git 'rev-parse', '--abbrev-ref', 'HEAD', dir
 git.repo = (dir)-> repoForPath(dir)
 git.hasStaged = (dir)-> gitrc 'diff', '--no-ext-diff', '--cached', '--quiet', dir
 git.hasChanges = (dir)-> gitrc 'diff', '--no-ext-diff', '--quiet', dir
 git.balance = (dir)-> git 'rev-list', '--count', '--left-right', '@{upstream}...HEAD', dir
-git.status = (dir)-> git 'status', '--porcelain', '--ignored', '--branch', dir
-git.parseBranch = (stdout)-> stdout.slice 3, if ~(i=stdout.indexOf '\n') then i
+git.status = (dir)-> git 'status', '--porcelain', '--ignored', dir
 git.parseStatus = (stdout, dirpath)->
   dirpath += path.sep if dirpath and not dirpath.endsWith path.sep
   b = ([n,f])-> n.startsWith dirpath

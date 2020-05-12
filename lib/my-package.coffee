@@ -104,6 +104,7 @@ module.exports = MyPackage =
         if groot = await dirstate.gitRoot
           return if @_timer?
           if repo = @repositories.get(groot)
+            writeGitSummary editor, repo
             return unless status = await repo.status
             return if @_timer?
             writeGitStatus editor, status, stats, @sortOrder, groot
@@ -130,7 +131,8 @@ module.exports = MyPackage =
       root = root.stdout.trim()
       root = path.normalize root
       if not @repositories.has root
-        gitstate = {root, status: @getGitStatus(root), stamp: Date.now()}
+        gitstate = {root, status: @getGitStatus(root)}
+        @getGitSummary(gitstate)
         @repositories.set root, gitstate
         # getting status causes index recreate after the command has returned
         # => start watching after a short break
@@ -150,11 +152,24 @@ module.exports = MyPackage =
       root2 = await @getGitRoot(path.dirname root)
       if root is root2
         gitstate.status = @getGitStatus(root)
+        @getGitSummary(gitstate)
         sleep(100).then => gitstate.watch = @gitwatch(root)
       else
         @repositories.delete root
       @scheduleUpdate()
     watch
+
+  getGitSummary: (gitstate)->
+    hasStaged = hasChanges = balance = branch = null
+    Object.assign gitstate, {hasStaged, hasChanges, balance, branch}
+    workdir = path.dirname gitstate.root
+    upd = (x)=> @scheduleUpdate(); x
+    git.branch(workdir).then(upd).then (x)-> gitstate.branch = x.stdout
+    git.hasStaged(workdir).then(upd).then (x)-> gitstate.hasStaged = x
+    git.hasChanges(workdir).then(upd).then (x)-> gitstate.hasChanges = x
+    git.remote(workdir).then (result)->
+      if result.stdout
+        git.balance(workdir).then(upd).then (x)-> gitstate.balance = x.stdout
 
   getGitStatus: (root)->
     return result.stdout if result = await git.safe git.status path.dirname root
@@ -229,12 +244,7 @@ paintColors = (editor, chunks, startRow, colspace, p)->
 
 writeGitStatus = (editor, status, stats, sortOrder, root)->
   workdir = path.dirname(root)
-  mark editor, [[1, 0], [1, workdir.length]], 'git-root'
-  branch = git.parseBranch status
   dir = editor.getPath()
-  range = editor.buffer.clipRange [[1,dir.length], [1, (editor.buffer.lineForRow 1).length]]
-  editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
-  editor.buffer.clearUndoStack()
   items = Object.entries(stats).sort comparers[sortOrder]
   p = editor.getPath()
   statuses = git.parseStatus status, path.relative workdir, p
@@ -258,6 +268,36 @@ writeGitStatusPart = (editor, statuses, layer, chunks, i, p)->
         editor.setTextInBufferRange range, s, bypassReadOnly: true
         editor.buffer.clearUndoStack()
   window.requestAnimationFrame -> writeGitStatusPart(editor, statuses, layer, chunks, i, p)
+
+writeGitSummary = (editor, repo)->
+  {hasStaged, hasChanges, balance, branch} = repo
+  # return unless hasStaged? or hasChanges or balance or branch
+  return unless branch
+  if hasStaged
+    branch += ' +'
+  else if hasChanges
+    branch += ' *'
+  branch += formatBalance balance
+  workdir = path.dirname(repo.root)
+  mark editor, [[1, 0], [1, workdir.length]], 'git-root'
+  dir = editor.getPath()
+  range = editor.buffer.clipRange [[1,dir.length], [1, (editor.buffer.lineForRow 1).length]]
+  editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
+  editor.buffer.clearUndoStack()
+
+formatBalance = (balance)->
+  return '' unless balance
+  if balance
+    if balance is '0\t0'
+      ' u='
+    else
+      balance = balance.split /\s+/
+      if balance[0] is '0'
+        ' u+' + balance[1]
+      else if balance[1] is '0'
+        ' u-' + balance[0]
+      else
+        ' u+' + balance.reverse().join('-')
 
 writeStats = (editor, stats, proj, sortOrder, selected)->
   items = Object.entries(stats).sort comparers[sortOrder]
