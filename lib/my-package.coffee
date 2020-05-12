@@ -159,6 +159,8 @@ module.exports = MyPackage =
   getGitStatus: (root)->
     return result.stdout if result = await git.safe git.status path.dirname root
     atom.notifications.addWarning "Cannot get git status", detail:git.lastError.message, dismissable: true
+    return
+
   deactivate: ->
     @subscriptions?.dispose()
     subscriptions.dispose() for [_, {subscriptions}] from @editors
