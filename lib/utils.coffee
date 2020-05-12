@@ -47,7 +47,7 @@ getStats = (dir)->
   try
     _.fromPairs await Promise.all entries.map (x)-> getStat(dir, x)
   catch error
-    console.log e.stack
+    console.log error.stack
     {}
 
 if process.platform is 'darwin'
