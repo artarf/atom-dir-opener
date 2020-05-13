@@ -1,9 +1,11 @@
 {CompositeDisposable} = require 'atom'
 path = require 'path'
 fs = require 'fs'
+assert = require 'assert'
 _ = require 'lodash'
 {getLengths, getLayers, getFields, leftpad, rightpad, listFiles} = utils = require './utils'
 git = require './git'
+GitWatch = require './git-watch'
 formatEntry = require './format'
 
 sleep = (ms)-> new Promise (resolve)-> setTimeout resolve, ms
@@ -96,8 +98,9 @@ module.exports = MyPackage =
         p = path.resolve editor.getPath() # drop trailing /
         unless dirstate = @directories.get(p)
           proj = atom.project.getPaths().find (d)-> p.startsWith d
-          dirstate = {stats: @getStats(p), gitRoot:@getGitRoot(p), proj}
+          dirstate = {directory: p, stats: null, gitRoot:@getGitRoot(p), proj}
           @directories.set p, dirstate
+          checkdir(p, this)
         return unless stats = await dirstate.stats
         return if @_timer? # abort if new update was triggered while waiting
         writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
@@ -105,76 +108,24 @@ module.exports = MyPackage =
           return if @_timer?
           if repo = @repositories.get(groot)
             writeGitSummary editor, repo
-            return unless status = await repo.status
+            return unless status = repo.watch.status
             return if @_timer?
             writeGitStatus editor, status, stats, @sortOrder, groot
 
-  getStats: (dir)->
-    try
-      stats = await utils.getStats(dir)
-      if dirstate = @directories.get(dir)
-        dirstate.watch?.close()
-        dirstate.watch = fs.watch dir, @dirwatch(dir)
-      return stats
-    catch e
-      @directories.delete(dir)
-      atom.notifications.addWarning dir, detail:e.message, dismissable: true
+  backoff: (dir)->
       for [editor, state] from @editors
         if dir is path.resolve editor.getPath()
           state.history.push editor.getPath()
           editor.buffer.setPath path.dirname dir
       @scheduleUpdate()
-      return
 
   getGitRoot: (dir)->
     if root = await git.safe git.root dir
       root = root.stdout.trim()
       root = path.normalize root
       if not @repositories.has root
-        gitstate = {root, status: @getGitStatus(root)}
-        @getGitSummary(gitstate)
-        @repositories.set root, gitstate
-        # getting status causes index recreate after the command has returned
-        # => start watching after a short break
-        sleep(100).then => gitstate.watch = @gitwatch(root)
+        @repositories.set root, {root, watch: new GitWatch root, @scheduleUpdate.bind(this)}
       root
-
-  dirwatch: (p)-> (type, filename)=>
-    @directories.get(p).stats = @getStats(p)
-    @scheduleUpdate()
-
-  gitwatch: (root)->
-    watch = fs.watch path.join(root, 'index'), (type, filename)=>
-      throw new Error "wtf" unless gitstate = @repositories.get(root)
-      # close+recreate watch for every change, because underlying
-      # index file is possibly deleted and recreated (i.e. not modified)
-      gitstate.watch?.close()
-      root2 = await @getGitRoot(path.dirname root)
-      if root is root2
-        gitstate.status = @getGitStatus(root)
-        @getGitSummary(gitstate)
-        sleep(100).then => gitstate.watch = @gitwatch(root)
-      else
-        @repositories.delete root
-      @scheduleUpdate()
-    watch
-
-  getGitSummary: (gitstate)->
-    hasStaged = hasChanges = balance = branch = null
-    Object.assign gitstate, {hasStaged, hasChanges, balance, branch}
-    workdir = path.dirname gitstate.root
-    upd = (x)=> @scheduleUpdate(); x
-    git.branch(workdir).then(upd).then (x)-> gitstate.branch = x.stdout
-    git.hasStaged(workdir).then(upd).then (x)-> gitstate.hasStaged = x
-    git.hasChanges(workdir).then(upd).then (x)-> gitstate.hasChanges = x
-    git.remote(workdir).then (result)->
-      if result.stdout
-        git.balance(workdir).then(upd).then (x)-> gitstate.balance = x.stdout
-
-  getGitStatus: (root)->
-    return result.stdout if result = await git.safe git.status path.dirname root
-    atom.notifications.addWarning "Cannot get git status", detail:git.lastError.message, dismissable: true
-    return
 
   deactivate: ->
     @subscriptions?.dispose()
@@ -184,8 +135,24 @@ module.exports = MyPackage =
       x.watch?.close()
     @directories.clear()
     for [root, x] from @repositories
-      x.watch?.close()
+      x.watch.dispose()
     @repositories.clear()
+
+checkdir = (p, pack, watch)->
+  try
+    assert (await fs.promises.stat p).isDirectory()
+    dirstate = pack.directories.get(p)
+    dirstate.stats = await utils.getStats(p)
+    pack.scheduleUpdate()
+    unless watch?
+      dirstate.watch = watch = fs.watch p, -> checkdir p, pack, watch
+    true
+  catch e
+    watch?.close()
+    pack.directories.delete p
+    atom.notifications.addWarning p, detail:e.message, dismissable: true
+    pack.backoff p
+    false
 
 # updates history, makes sure it does not grow too big
 # returns the item that shoud be selected
@@ -270,7 +237,7 @@ writeGitStatusPart = (editor, statuses, layer, chunks, i, p)->
   window.requestAnimationFrame -> writeGitStatusPart(editor, statuses, layer, chunks, i, p)
 
 writeGitSummary = (editor, repo)->
-  {hasStaged, hasChanges, balance, branch} = repo
+  {hasStaged, hasChanges, balance, branch} = repo.watch
   # return unless hasStaged? or hasChanges or balance or branch
   return unless branch
   if hasStaged
