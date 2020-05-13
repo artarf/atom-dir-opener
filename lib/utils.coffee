@@ -4,6 +4,16 @@ path = require 'path'
 _ = require 'lodash'
 X = require 'execa'
 
+statsEqual = (a, b)->
+  return unless a instanceof fs.Stats
+  return unless b instanceof fs.Stats
+  a.mode is b.mode and
+  a.size is b.size and
+  a.nlink is b.nlink and
+  a.mtimeMs is b.mtimeMs and
+  a.uid is b.uid and
+  a.gid is b.gid
+
 ftype = (stats)->
   if stats.isBlockDevice() then 'b'
   else if stats.isCharacterDevice() then 'c'
@@ -93,4 +103,4 @@ getLengths = (x)->
   lengths
 
 users = groups = new Map
-module.exports = {ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getLengths, getFields, getLayers}
+module.exports = {statsEqual, ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getLengths, getFields, getLayers}

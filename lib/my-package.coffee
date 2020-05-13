@@ -105,7 +105,9 @@ module.exports = MyPackage =
           checkdir(p, this)
         continue unless stats = dirstate.stats
         return if @_timer? # abort if new update was triggered while waiting
-        writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
+        if stateChanged estate.prevState, stats, @sortOrder, p
+          writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
+          estate.prevState = {uri:p, @sortOrder, stats}
         if groot = dirstate.gitRoot
           return if @_timer?
           if repo = @repositories.get(groot)
@@ -139,6 +141,11 @@ module.exports = MyPackage =
     for [root, x] from @repositories
       x.watch.dispose()
     @repositories.clear()
+
+stateChanged = (prev = {}, stats, sortOrder, uri)->
+  return true if uri isnt prev.uri
+  return true if sortOrder isnt prev.sortOrder
+  not _.isEqualWith stats, prev.stats, utils.statsEqual
 
 checkdir = (p, pack, watch)->
   try
