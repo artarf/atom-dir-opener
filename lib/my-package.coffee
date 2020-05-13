@@ -102,14 +102,14 @@ module.exports = MyPackage =
           @directories.set p, dirstate
           @getGitRoot(p)
           checkdir(p, this)
-        return unless stats = dirstate.stats
+        continue unless stats = dirstate.stats
         return if @_timer? # abort if new update was triggered while waiting
         writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
         if groot = dirstate.gitRoot
           return if @_timer?
           if repo = @repositories.get(groot)
             writeGitSummary editor, repo
-            return unless status = repo.watch.status
+            continue unless status = repo.watch.status
             return if @_timer?
             writeGitStatus editor, status, stats, @sortOrder, groot
 
