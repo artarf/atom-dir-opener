@@ -4,6 +4,11 @@ Dired like view for navigating directories in Atom
 
 ## Purpose
 
+Keyboard navigable directory browsing and editing and enable all nice
+editor navigating features of
+[vim-mode-plus](https://github.com/t9md/atom-vim-mode-plus).
+Extra nicety is that you can select things (and copy) just like in normal editor.
+
 Using trackpad causes me [RSI](https://en.wikipedia.org/wiki/Repetitive_strain_injury),
 so I need a way to use keyboard for navigating directories.
 Atom builtin [tree-view](https://github.com/atom/tree-view) can be used by keyboard
@@ -48,6 +53,9 @@ Also it's nice to have familiar `ls -al` format to _see_ directory contents.
 - Works on macos
 - Will work on linux
 - Windows support depends on contributions
+- Propably not very practical for mouse addicts; features are designed to be used with keyboard
+- Needs git executable on path
+- Tested only with Git 2.26.2
 
 ## Commands
 
