@@ -127,7 +127,9 @@ module.exports = MyPackage =
     if root = await git.safe git.root dir
       root = root.stdout.trim()
       root = path.normalize root
-      @directories.get(dir).gitRoot = root
+      # dirstate does not exist if there was an error opening it
+      return unless dirstate = @directories.get(dir)
+      dirstate.gitRoot = root
       if not @repositories.has root
         @repositories.set root, {root, watch: new GitWatch root, @scheduleUpdate.bind(this)}
 
