@@ -135,16 +135,16 @@ copyFullpathsToClipboard = (event)->
   clearSelections(editor)
 
 module.exports =
-  'my-package:open-parent-directory': openParent
-  'my-package:open-child': openChild
-  'my-package:go-home': goHome
-  'my-package:open-external': openExternal
-  'my-package:copy-names-to-clipboard': copyNamesToClipboard
-  'my-package:copy-fullpaths-to-clipboard': copyFullpathsToClipboard
-  'my-package:toggle-selected-and-next-row': toggleRow
-  'my-package:git-toggle-staged': gitToggleStaged
-  'my-package:git-reset-head': gitReset
-  'my-package:activate-linewise-visual-mode': (event)->
+  'dir-opener:open-parent-directory': openParent
+  'dir-opener:open-child': openChild
+  'dir-opener:go-home': goHome
+  'dir-opener:open-external': openExternal
+  'dir-opener:copy-names-to-clipboard': copyNamesToClipboard
+  'dir-opener:copy-fullpaths-to-clipboard': copyFullpathsToClipboard
+  'dir-opener:toggle-selected-and-next-row': toggleRow
+  'dir-opener:git-toggle-staged': gitToggleStaged
+  'dir-opener:git-reset-head': gitReset
+  'dir-opener:activate-linewise-visual-mode': (event)->
     return if event.currentTarget.getModel().getCursorBufferPosition().row < 3
     atom.commands.dispatch event.currentTarget, 'vim-mode-plus:activate-linewise-visual-mode'
-  'my-package:noop': -> console.log arguments
+  'dir-opener:noop': -> console.log arguments

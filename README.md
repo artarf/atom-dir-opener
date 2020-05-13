@@ -1,4 +1,4 @@
-# my-package package
+# dir-opener package
 
 Dired like view for navigating directories in Atom
 
@@ -59,33 +59,33 @@ Also it's nice to have familiar `ls -al` format to _see_ directory contents.
 
 ## Commands
 
-- `my-package:open-parent-directory`
+- `dir-opener:open-parent-directory`
    Some explanation...
-- `my-package:open-child`
-- `my-package:go-home`
-- `my-package:reload-directory`
-- `my-package:open-external`
-- `my-package:select-current`
-- `my-package:copy-names-to-clipboard`
-- `my-package:copy-fullpaths-to-clipboard`
-- `my-package:toggle-selected-and-next-row`
-- `my-package:activate-linewise-visual-mode`
-- `my-package:git-toggle-staged`
+- `dir-opener:open-child`
+- `dir-opener:go-home`
+- `dir-opener:reload-directory`
+- `dir-opener:open-external`
+- `dir-opener:select-current`
+- `dir-opener:copy-names-to-clipboard`
+- `dir-opener:copy-fullpaths-to-clipboard`
+- `dir-opener:toggle-selected-and-next-row`
+- `dir-opener:activate-linewise-visual-mode`
+- `dir-opener:git-toggle-staged`
 
 ## Default keybindings
 
     'atom-workspace':
-      'cmd-|': 'my-package:open-directory'
+      'cmd-|': 'dir-opener:open-directory'
     'atom-text-editor.dir':
-      'h': 'my-package:open-parent-directory'
-      'l': 'my-package:open-child'
-      '~': 'my-package:go-home'
-      'cmd-r': 'my-package:reload-directory'
-      'shift-o': 'my-package:open-external'
-      'v': 'my-package:activate-linewise-visual-mode'
-      'V': 'my-package:activate-linewise-visual-mode'
-      'f': 'my-package:toggle-selected-and-next-row'
-      'shift-y shift-y': 'my-package:copy-names-to-clipboard'
-      'shift-y f': 'my-package:copy-fullpaths-to-clipboard'
-      'shift-y shift-f': 'my-package:copy-fullpaths-to-clipboard'
-      'g i a': 'my-package:git-toggle-staged'
+      'h': 'dir-opener:open-parent-directory'
+      'l': 'dir-opener:open-child'
+      '~': 'dir-opener:go-home'
+      'cmd-r': 'dir-opener:reload-directory'
+      'shift-o': 'dir-opener:open-external'
+      'v': 'dir-opener:activate-linewise-visual-mode'
+      'V': 'dir-opener:activate-linewise-visual-mode'
+      'f': 'dir-opener:toggle-selected-and-next-row'
+      'shift-y shift-y': 'dir-opener:copy-names-to-clipboard'
+      'shift-y f': 'dir-opener:copy-fullpaths-to-clipboard'
+      'shift-y shift-f': 'dir-opener:copy-fullpaths-to-clipboard'
+      'g i a': 'dir-opener:git-toggle-staged'

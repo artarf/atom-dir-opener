@@ -8,22 +8,22 @@
 # For more detailed documentation see
 # https://atom.io/docs/latest/behind-atom-keymaps-in-depth
 'atom-workspace':
-  'cmd-|': 'my-package:open-directory'
-'atom-text-editor.dir':
-  'h': 'my-package:open-parent-directory'
-  'l': 'my-package:open-child'
-  '~': 'my-package:go-home'
-  'shift-o': 'my-package:open-external'
-  'v': 'my-package:activate-linewise-visual-mode'
-  'V': 'my-package:activate-linewise-visual-mode'
-  'f': 'my-package:toggle-selected-and-next-row'
-  'shift-y shift-y': 'my-package:copy-names-to-clipboard'
-  'shift-y f': 'my-package:copy-fullpaths-to-clipboard'
-  'shift-y shift-f': 'my-package:copy-fullpaths-to-clipboard'
-  'g i a': 'my-package:git-toggle-staged'
-  'g i r': 'my-package:git-reset-head'
+  'cmd-|': 'dir-opener:open-directory'
+'atom-text-editor.dir-opener':
+  'h': 'dir-opener:open-parent-directory'
+  'l': 'dir-opener:open-child'
+  '~': 'dir-opener:go-home'
+  'shift-o': 'dir-opener:open-external'
+  'v': 'dir-opener:activate-linewise-visual-mode'
+  'V': 'dir-opener:activate-linewise-visual-mode'
+  'f': 'dir-opener:toggle-selected-and-next-row'
+  'shift-y shift-y': 'dir-opener:copy-names-to-clipboard'
+  'shift-y f': 'dir-opener:copy-fullpaths-to-clipboard'
+  'shift-y shift-f': 'dir-opener:copy-fullpaths-to-clipboard'
+  'g i a': 'dir-opener:git-toggle-staged'
+  'g i r': 'dir-opener:git-reset-head'
 
   # disable some vim-mode-plus keybindings
-  'c': 'my-package:noop'
-  'd': 'my-package:noop'
-  'i': 'my-package:noop'
+  'c': 'dir-opener:noop'
+  'd': 'dir-opener:noop'
+  'i': 'dir-opener:noop'

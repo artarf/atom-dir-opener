@@ -33,7 +33,7 @@ padding = l: leftpad, r: rightpad
 plus = (a,b)-> a + b
 commands = require './commands'
 
-module.exports = MyPackage =
+module.exports =
   subscriptions: null
   editors: new Map
   directories: new Map
@@ -41,7 +41,7 @@ module.exports = MyPackage =
   sortOrder: "dirThenName"
 
   activate: ->
-    await require('atom-package-deps').install('my-package')
+    await require('atom-package-deps').install('dir-opener')
     keymapFile = path.join path.dirname(__dirname), 'keymaps', 'my-package.cson'
     atom.keymaps.reloadKeymap keymapFile, priority: 1
     once = atom.workspace.observeTextEditors (e)->
@@ -82,7 +82,7 @@ module.exports = MyPackage =
         atom.workspace.open dir.path + '/'
 
     @subscriptions.add atom.commands.add 'atom-workspace',
-      'my-package:open-directory': =>
+      'dir-opener:open-directory': =>
         if e = atom.workspace.getActivePaneItem()
           if @editors.has(e)
             # # TODO: cycle project dirs

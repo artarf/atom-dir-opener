@@ -1,10 +1,10 @@
 {
-  "name": "my-package",
+  "name": "dir-opener",
   "main": "./lib/my-package",
   "version": "0.0.0",
   "description": "Dired like view for navigating directories in Atom",
   "keywords": [],
-  "repository": "https://github.com/atom/my-package",
+  "repository": "https://github.com/atom/dir-opener",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"

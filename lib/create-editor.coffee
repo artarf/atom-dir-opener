@@ -36,7 +36,7 @@ viewDefaults =
 module.exports = (uri, fields)->
   editor = new DirectoryView()
   editor.buffer.setPath uri
-  editor.getElement().classList.add 'dir'
+  editor.getElement().classList.add 'dir-opener'
   for field in fields
     layer = editor.addMarkerLayer role: field
     editor.decorateMarkerLayer layer, type:'text', class: field
