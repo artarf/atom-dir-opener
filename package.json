@@ -1,6 +1,6 @@
 {
   "name": "dir-opener",
-  "main": "./lib/my-package",
+  "main": "./lib/dir-opener",
   "version": "0.0.0",
   "description": "Dired like view for navigating directories in Atom",
   "keywords": [],
