@@ -98,13 +98,14 @@ module.exports = MyPackage =
         p = path.resolve editor.getPath() # drop trailing /
         unless dirstate = @directories.get(p)
           proj = atom.project.getPaths().find (d)-> p.startsWith d
-          dirstate = {directory: p, stats: null, gitRoot:@getGitRoot(p), proj}
+          dirstate = {directory: p, stats: null, proj}
           @directories.set p, dirstate
+          @getGitRoot(p)
           checkdir(p, this)
-        return unless stats = await dirstate.stats
+        return unless stats = dirstate.stats
         return if @_timer? # abort if new update was triggered while waiting
         writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
-        if groot = await dirstate.gitRoot
+        if groot = dirstate.gitRoot
           return if @_timer?
           if repo = @repositories.get(groot)
             writeGitSummary editor, repo
@@ -123,9 +124,9 @@ module.exports = MyPackage =
     if root = await git.safe git.root dir
       root = root.stdout.trim()
       root = path.normalize root
+      @directories.get(dir).gitRoot = root
       if not @repositories.has root
         @repositories.set root, {root, watch: new GitWatch root, @scheduleUpdate.bind(this)}
-      root
 
   deactivate: ->
     @subscriptions?.dispose()
