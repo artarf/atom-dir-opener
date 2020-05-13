@@ -284,7 +284,6 @@ writeStats = (editor, stats, proj, sortOrder, selected)->
       row[j] = padding[d](row[j], lengths[j])
   f = (row)-> row.join(' '.repeat colspace) + '\n'
   text = '\n' + dir + '\n\n' + x.map(f).join('')
-  return false if text is editor.buffer.getText()
   clearMarkers(editor)
   editor.setText text, bypassReadOnly: true
   if proj
@@ -294,7 +293,7 @@ writeStats = (editor, stats, proj, sortOrder, selected)->
   editor.element.scrollToTop() if selectedRow <= screenHeight(editor)
   editor.buffer.clearUndoStack()
   paintColors editor, _.chunk(x, 300), 3, colspace, editor.getPath()
-  return true
+  return
 
 mark = (editor, range, cls)->
   marker = editor.markBufferRange range, invalidate:'never', exclusive: true
