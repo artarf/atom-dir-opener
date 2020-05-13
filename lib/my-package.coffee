@@ -55,8 +55,8 @@ module.exports = MyPackage =
     @subscriptions.add atom.workspace.addOpener (uri)=>
       orig = uri
       return if uri.startsWith 'atom:'
-      if uri.endsWith path.sep
-        uri = path.resolve uri
+      if uri.endsWith '/_/'
+        uri = path.resolve uri.slice 0, -3
         if not fs.statSync(uri).isDirectory()
           selected = uri
           uri = path.dirname(uri) + path.sep
@@ -88,7 +88,8 @@ module.exports = MyPackage =
             # # TODO: cycle project dirs
             return
           if _path = e?.getPath?()
-            return atom.workspace.open _path + path.sep
+            # Fool other openers that are extension based
+            return atom.workspace.open _path + '/_/'
         atom.workspace.open defaultDir()
   useVimModePlus: (vmp)->
   scheduleUpdate: ->
