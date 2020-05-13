@@ -42,7 +42,7 @@ module.exports =
 
   activate: ->
     await require('atom-package-deps').install('dir-opener')
-    keymapFile = path.join path.dirname(__dirname), 'keymaps', 'my-package.cson'
+    keymapFile = path.join path.dirname(__dirname), 'keymaps', 'dir-opener.cson'
     atom.keymaps.reloadKeymap keymapFile, priority: 1
     once = atom.workspace.observeTextEditors (e)->
       if (not e.getPath?()) and e.getTitle() is 'untitled'
