@@ -57,7 +57,7 @@ clearSelections = (editor)->
   vimState(editor).clearPersistentSelections()
   pos = editor.getCursorBufferPosition()
   sel = editor.getSelectedBufferRange()
-  pos = pos.translate [-1, 0] if pos.isEqual(sel.end) and pos.isGreaterThan(sel.start)
+  pos = pos.translate [-1, 0] if pos.row > sel.start.row
   editor.setCursorBufferPosition(pos)
 
 getSelectedEntries = (event)->
