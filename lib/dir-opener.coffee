@@ -64,7 +64,7 @@ module.exports =
           unless editor = atom.workspace.getActivePane().items.find (x)=> @editors.has(x)
             editor = require('./create-editor')(uri, fields)
             subscriptions = new CompositeDisposable
-            subscriptions.add atom.commands.add editor.element, commands
+            subscriptions.add atom.commands.add editor.element, _.mapValues commands, runCommand(editor, this)
             subscriptions.add editor.onDidChangePath => @scheduleUpdate()
             subscriptions.add editor.onDidDestroy =>
               subscriptions.dispose()
@@ -143,6 +143,13 @@ module.exports =
     for [root, x] from @repositories
       x.watch.dispose()
     @repositories.clear()
+
+runCommand = (editor, {directories, repositories, editors})->
+  (f)-> (event)->
+    p = path.resolve editor.getPath()
+    dir = directories.get(p)
+    repo = repositories.get(dir.gitRoot) if dir.gitRoot
+    f event, {editor, dir, repo}
 
 stateChanged = (prev = {}, stats, sortOrder, uri)->
   return true if uri isnt prev.uri
