@@ -105,12 +105,13 @@ module.exports =
           checkdir(p, this)
         continue unless stats = dirstate.stats
         return if @_timer? # abort if new update was triggered while waiting
-        if stateChanged estate.prevState, stats, @sortOrder, p
+        if _stateChange = stateChanged estate.prevState, stats, @sortOrder, p
           writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
           estate.prevState = {uri:p, @sortOrder, stats}
         if groot = dirstate.gitRoot
           return if @_timer?
           if repo = @repositories.get(groot)
+            repo.watch.check() if _stateChange
             writeGitSummary editor, repo
             continue unless status = repo.watch.status
             return if @_timer?
