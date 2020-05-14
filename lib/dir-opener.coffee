@@ -72,17 +72,16 @@ module.exports =
           if i > -1
             editor.setCursorBufferPosition [i + 5, 0]
       else
-            editor = require('./create-editor')(uri, fields)
-            subscriptions = new CompositeDisposable
-            subscriptions.add atom.commands.add editor.element, _.mapValues commands, runCommand(editor, this)
-            subscriptions.add editor.onDidChangePath => @scheduleUpdate()
-            subscriptions.add editor.onDidDestroy =>
-              subscriptions.dispose()
-              @editors.delete editor
-            @scheduleUpdate()
-            history = [selected] if selected?
-            uri = stats = gitStatus = null
-            @editors.set editor, {subscriptions, uri, stats, gitStatus, history}
+        editor = require('./create-editor')(uri, fields)
+        subscriptions = new CompositeDisposable
+        subscriptions.add atom.commands.add editor.element, _.mapValues commands, runCommand(editor, this)
+        subscriptions.add editor.onDidChangePath => @scheduleUpdate()
+        subscriptions.add editor.onDidDestroy =>
+          subscriptions.dispose()
+          @editors.delete editor
+        @scheduleUpdate()
+        history = [selected] if selected?
+        @editors.set editor, {subscriptions, history}
       editor
     if atom.textEditors.editors.size is 0
       if dir = atom.project.rootDirectories[0]
