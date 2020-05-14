@@ -1,12 +1,14 @@
 {CompositeDisposable} = require 'atom'
 path = require 'path'
 fs = require 'fs'
+os = require 'os'
 assert = require 'assert'
 _ = require 'lodash'
 {getLengths, getLayers, getFields, leftpad, rightpad, listFiles} = utils = require './utils'
 git = require './git'
 GitWatch = require './git-watch'
 formatEntry = require './format'
+PREFIX = 'dir-opener:/'
 
 sleep = (ms)-> new Promise (resolve)-> setTimeout resolve, ms
 
@@ -24,7 +26,6 @@ comparers =
 HISTORY_LIMIT = 200
 
 defaultDir = ->
-  os = require 'os'
   p = atom.project.getDirectories()[0]
   p?.path ? os.homedir()
 
@@ -53,15 +54,13 @@ module.exports =
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.addOpener (uri)=>
-      orig = uri
-      return if uri.startsWith 'atom:'
-      if uri.endsWith '/_/'
-        uri = path.resolve uri.slice 0, -3
-        if not fs.statSync(uri).isDirectory()
-          selected = uri
-          uri = path.dirname(uri) + path.sep
+      return unless uri.startsWith PREFIX
+      uri = uri.slice PREFIX.length
+      if uri.endsWith '/..'
+        selected = path.resolve uri.slice 0, -3
       try
-        if uri.endsWith(path.sep) or uri is '~' or fs.statSync(uri).isDirectory()
+        uri = path.resolve uri.replace '~', os.homedir()
+        if uri.endsWith(path.sep) or fs.statSync(uri).isDirectory()
           unless editor = atom.workspace.getActivePane().items.find (x)=> @editors.has(x)
             editor = require('./create-editor')(uri, fields)
             subscriptions = new CompositeDisposable
@@ -79,7 +78,7 @@ module.exports =
       editor
     if atom.textEditors.editors.size is 0
       if dir = atom.project.rootDirectories[0]
-        atom.workspace.open dir.path + '/'
+        atom.workspace.open PREFIX + dir.path + '/'
 
     @subscriptions.add atom.commands.add 'atom-workspace',
       'dir-opener:open-directory': =>
@@ -89,7 +88,7 @@ module.exports =
             return
           if _path = e?.getPath?()
             # Fool other openers that are extension based
-            return atom.workspace.open _path + '/_/'
+            return atom.workspace.open PREFIX + _path + path.sep + '..'
         atom.workspace.open defaultDir()
   useVimModePlus: (vmp)->
   scheduleUpdate: ->
