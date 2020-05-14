@@ -54,14 +54,24 @@ module.exports =
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.addOpener (uri)=>
-      return unless uri.startsWith PREFIX
-      uri = uri.slice PREFIX.length
+      uri = uri.slice PREFIX.length if uri.startsWith PREFIX
+      uri = uri.replace '~', os.homedir()
       if uri.endsWith '/..'
         selected = path.resolve uri.slice 0, -3
+      uri = path.resolve uri
       try
-        uri = path.resolve uri.replace '~', os.homedir()
-        if uri.endsWith(path.sep) or fs.statSync(uri).isDirectory()
-          unless editor = atom.workspace.getActivePane().items.find (x)=> @editors.has(x)
+        return if not fs.statSync(uri).isDirectory()
+      catch e
+        return
+      if editor = atom.workspace.getActivePane().items.find (x)=> @editors.has(x)
+        editor.buffer.setPath uri
+        if selected
+          dirstate = @directories.get(uri)
+          items = Object.entries(dirstate.stats).sort comparers[@sortOrder]
+          i = items.findIndex ([name])=> name is path.basename selected
+          if i > -1
+            editor.setCursorBufferPosition [i + 5, 0]
+      else
             editor = require('./create-editor')(uri, fields)
             subscriptions = new CompositeDisposable
             subscriptions.add atom.commands.add editor.element, _.mapValues commands, runCommand(editor, this)
@@ -73,8 +83,6 @@ module.exports =
             history = [selected] if selected?
             uri = stats = gitStatus = null
             @editors.set editor, {subscriptions, uri, stats, gitStatus, history}
-      catch e
-        console.error e.stack
       editor
     if atom.textEditors.editors.size is 0
       if dir = atom.project.rootDirectories[0]
