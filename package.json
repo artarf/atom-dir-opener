@@ -12,6 +12,11 @@
   "package-deps": [
     "vim-mode-plus"
   ],
+  "consumedServices": {
+    "vim-mode-plus": {
+      "versions": {"0.1.0": "useVimModePlus"}
+    }
+  },
   "dependencies": {
     "atom-coffee2-transpiler": "0.0.2",
     "atom-package-deps": "^5.1.0",

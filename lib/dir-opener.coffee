@@ -97,7 +97,7 @@ module.exports =
             # Fool other openers that are extension based
             return atom.workspace.open PREFIX + _path + path.sep + '..'
         atom.workspace.open defaultDir()
-  useVimModePlus: (vmp)->
+  useVimModePlus: (@vmp)->
   scheduleUpdate: ->
     @_timer ?= window.requestAnimationFrame =>
       @_timer = null
@@ -151,12 +151,32 @@ module.exports =
       x.watch.dispose()
     @repositories.clear()
 
-runCommand = (editor, {directories, repositories, editors})->
+runCommand = (editor, {directories, repositories, editors, vmp})->
   (f)-> (event)->
     p = path.resolve editor.getPath()
     dir = directories.get(p)
     repo = repositories.get(dir.gitRoot) if dir.gitRoot
-    f event, {editor, dir, repo}
+    vimState = vmp.getEditorState(editor)
+    f event, Object.assign {editor, dir, repo, vimState},
+      fileAtCursor:fileAtCursor(editor)
+      selected:getSelectedEntries(editor, vimState)
+
+fileAtCursor = (editor)->
+  {row} = editor.getCursorBufferPosition()
+  return if row < 3
+  uri = editor.getPath()
+  path.normalize path.join uri, getFields(editor, row, ['name'])[0]
+
+getSelectedEntries = (editor, vimstate)->
+  sels = vimstate?.getPersistentSelectionBufferRanges()
+  unless sels?.length
+    sels = editor.getSelectedBufferRanges()
+  a = new Set
+  for {start, end} in sels
+    for i in [start.row .. end.row - (end.column is 0)] by 1
+      a.add _.first getFields editor, i, ['name']
+  return Array.from a.values() if a.size
+  getFields(editor, sels[0].start.row, ['name'])
 
 stateChanged = (prev = {}, stats, sortOrder, uri)->
   return true if uri isnt prev.uri
