@@ -89,8 +89,7 @@ _getLayers = (editor, roles)->
   mFilter editor.displayLayer.displayMarkerLayersById, (x)-> roles.includes x.bufferMarkerLayer.role
 
 getLayers = (editor, roles)->
-  x = _.keyBy _getLayers(editor, roles), 'bufferMarkerLayer.role'
-  roles.map (r)-> x[r]
+  _.keyBy _getLayers(editor, roles), 'bufferMarkerLayer.role'
 
 notEmpty = (marker)-> not marker.getBufferRange().isEmpty()
 
