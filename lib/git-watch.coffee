@@ -16,21 +16,21 @@ class GitWatch
   constructor: (root, @callback)->
     @root = path.resolve root
     assert isDir(@root)
-    @working = @closed = @changed = false
+    @working = @closed = false
     @status = @branch = @balance = @hasStaged = @hasChanges = null
     @index = path.join @root, 'index'
     @workdir = path.dirname @root
-    @interval = setInterval @send.bind(this), 300
     setTimeout @check.bind(this)
   send: ->
-    return if @changed is false or @closed
-    @changed = false
+    return if @closed
+    @sendRequest = null
     @callback()
   setProperty: (name, value)->
     return if @closed
     return if this[name] is value
     this[name] = value
-    @changed = true
+    clearTimeout @sendRequest if @sendRequest?
+    @sendRequest = setTimeout @send.bind(this), 100
   setHasChanges: (hasChanges)-> @setProperty 'hasChanges', hasChanges
   setHasStaged: (hasStaged)-> @setProperty 'hasStaged', hasStaged
   setBranch: (branch)-> @setProperty 'branch', branch
@@ -39,8 +39,8 @@ class GitWatch
   dispose: ->
     return if @closed
     @watch?.close()
-    clearInterval @interval if @interval?
-    @working = @changed = @watch = @status = @branch = @balance = @hasStaged = @hasChanges = @interval = null
+    clearTimeout @sendRequest if @sendRequest?
+    @working = @watch = @status = @branch = @balance = @hasStaged = @hasChanges = @sendRequest = null
     @closed = true
     return
   indexChanged: ->
@@ -48,12 +48,12 @@ class GitWatch
     @watch.close()
     @watch = null
     return @dispose() if not isDir(@root) # root is deleted
-    setTimeout @check.bind(this), 10
+    setTimeout @check.bind(this)
   check: ->
     return if @closed
     if (not isFile @index) or @working
       clearTimeout @checkLock if @checkLock?
-      @checkLock = setTimeout @check.bind(this), 100
+      @checkLock = setTimeout @check.bind(this), 10
       return
     @watch?.close()
     @working = true
@@ -66,7 +66,7 @@ class GitWatch
         git.balance(@workdir).then (x)=> @setBalance x.stdout
     promises.push git.status(@workdir).then (result)=> @setStatus result.stdout
     await Promise.all(promises)
-    await sleep(100)
+    await sleep(10)
     @checkLock = null
     @working = false
     @watch = fs.watch @index, @indexChanged.bind this
