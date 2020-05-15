@@ -82,7 +82,7 @@ gitToggleStaged = (_, {fileAtCursor, selected})->
     if repo.isPathStaged _file
       restore.push file
     else
-      repo.add _file
+      await git.add fileAtCursor
   if restore.length
     await git 'restore', '--staged', restore..., dir
   if dirs.length
