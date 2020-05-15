@@ -27,3 +27,5 @@
   'c': 'dir-opener:noop'
   'd': 'dir-opener:noop'
   'i': 'dir-opener:noop'
+  'J': 'dir-opener:noop'
+  'K': 'dir-opener:noop'
