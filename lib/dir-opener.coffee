@@ -258,8 +258,7 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
   workdir = path.dirname(root)
   dir = editor.getPath()
   items = Object.entries(stats).sort comparers[sortOrder]
-  p = editor.getPath()
-  statuses = git.parseStatus status, path.relative workdir, p
+  statuses = git.parseStatus status, path.relative workdir, dir
   _status = (name)-> statuses[name] ? '  '
   ks = Object.keys(statuses)
   if ks.length is 1 and (ks[0] is '' or ks[0].endsWith path.sep)
@@ -267,7 +266,7 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
     _status = -> _s
   layer = getLayers(editor, ['gitstatus'])[0]
   linkLayer = getLayers(editor, ['link'])[0]
-  writeGitStatusPart(editor, _status, layer, linkLayer, _.chunk(items, 50), 5, p)
+  writeGitStatusPart(editor, _status, layer, linkLayer, _.chunk(items, 50), 5, dir)
 
 writeGitStatusPart = (editor, statuses, layer, linkLayer, chunks, i, p)->
   return if editor.getPath() isnt p or chunks.length is 0
