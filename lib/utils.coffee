@@ -85,15 +85,26 @@ else if process.platform is 'linux'
 
 mFilter = (m, pred)-> val for val from m.values() when pred(val)
 
-getLayers = (editor, roles)->
+_getLayers = (editor, roles)->
   mFilter editor.displayLayer.displayMarkerLayersById, (x)-> roles.includes x.bufferMarkerLayer.role
 
+getLayers = (editor, roles)->
+  x = _.keyBy _getLayers(editor, roles), 'bufferMarkerLayer.role'
+  roles.map (r)-> x[r]
+
+notEmpty = (marker)-> not marker.getBufferRange().isEmpty()
+
 getFields = (editor, row, roles)->
-  layers = _.keyBy getLayers(editor, roles), 'bufferMarkerLayer.role'
+  layers = _.keyBy _getLayers(editor, roles), 'bufferMarkerLayer.role'
   roles.map (role)->
-    unless x = layers[role]?.findMarkers(startBufferRow: row)?[0]
+    unless x = layers[role]?.findMarkers(startBufferRow: row).filter(notEmpty)[0]
       return ""
     editor.getTextInBufferRange x.getBufferRange()
+
+deleteMarkers = (editor, row, roles)->
+  editor.displayLayer.displayMarkerLayersById.forEach (layer)->
+    if roles.includes layer.bufferMarkerLayer.role
+      marker.destroy() for marker in layer.findMarkers(startBufferRow: row)
 
 getLengths = (x)->
   lengths = []
@@ -103,4 +114,4 @@ getLengths = (x)->
   lengths
 
 users = groups = new Map
-module.exports = {statsEqual, ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getLengths, getFields, getLayers}
+module.exports = {deleteMarkers, statsEqual, ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getLengths, getFields, getLayers}

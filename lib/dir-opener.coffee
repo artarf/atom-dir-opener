@@ -257,8 +257,11 @@ paintColors = (editor, chunks, startRow, colspace, p)->
 writeGitStatus = (editor, status, stats, sortOrder, root)->
   workdir = path.dirname(root)
   dir = editor.getPath()
-  items = Object.entries(stats).sort comparers[sortOrder]
   statuses = git.parseStatus status, path.relative workdir, dir
+  deleted = Object.entries(statuses).filter ([_,s])-> s[0] is 'D' or s[1] is 'D'
+  _stats = Object.entries(stats)
+  _stats.push [name] for [name] in deleted
+  items = _stats.sort comparers[sortOrder]
   _status = (name)-> statuses[name] ? '  '
   ks = Object.keys(statuses)
   if ks.length is 1 and (ks[0] is '' or ks[0].endsWith path.sep)
@@ -269,9 +272,10 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
   writeGitStatusPart(editor, _status, layer, linkLayer, _.chunk(items, 50), 5, dir)
 
 writeGitStatusPart = (editor, statuses, layer, linkLayer, chunks, i, p)->
+  [nameLayer, modeLayer] = getLayers(editor, ['name', 'mode'])
   return if editor.getPath() isnt p or chunks.length is 0
   items = chunks.shift()
-  for [item] in items
+  for [item, stats] in items
     item = item.slice(0, -1) if item.endsWith path.sep
     row = i++
     if x = layer.findMarkers(startBufferRow: row)?[0]
@@ -279,7 +283,32 @@ writeGitStatusPart = (editor, statuses, layer, linkLayer, chunks, i, p)->
       s = ss.slice 0, 2
       range = x.getBufferRange()
       oldval = editor.getTextInBufferRange range
-      if s isnt oldval
+      if stats? and editor.buffer.lineForRow(row)[0] is ' '
+        # row for deleted file must be deleted
+        utils.deleteMarkers(editor, row, fields)
+        editor.setTextInBufferRange [[row, 0],[row + 1, 0]], '', bypassReadOnly: true
+      if not stats?
+        statusCol = layer.findMarkers(startBufferRow: 3)[0].getBufferRange().start.column
+        nameCol = statusCol + 4
+        x = nameLayer.findMarkers(startBufferRow: row)[0]
+        name = editor.getTextInBufferRange x.getBufferRange()
+        if item isnt name
+          modex = modeLayer.findMarkers(startBufferRow: row)[0]
+          modexRange = modex.getBufferRange().translate [1,0]
+          # insert new row
+          text = ' '.repeat(statusCol)
+          text += s + '  '
+          text += item + '\n'
+          statusRange = {start:[row, statusCol], end:[row, statusCol + 2]}
+          nameRange = {start:[row, nameCol], end:[row, nameCol + text.length]}
+          editor.setTextInBufferRange [[row, 0], [row, 0]], text, bypassReadOnly: true
+          modex.setBufferRange modexRange
+          layer.markBufferRange statusRange, exclusive: false, invalidate: 'never'
+          nameLayer.markBufferRange nameRange, exclusive: false, invalidate: 'never'
+          row++
+        else if s isnt oldval
+          editor.setTextInBufferRange range, s, bypassReadOnly: true
+      else if s isnt oldval
         editor.setTextInBufferRange range, s, bypassReadOnly: true
         if oldval[0] is 'R'
           r = linkLayer.findMarkers(startBufferRow: row)?[0].getBufferRange()
