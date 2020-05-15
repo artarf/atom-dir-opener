@@ -66,7 +66,10 @@ git.parseStatus = (stdout, dirpath)->
 filepart = (statusRow)-> statusRow.slice 3
 flag = (statusRow)-> statusRow.slice 0, 2
 byDir = fp.groupBy (statusRow)-> path.dirname filepart statusRow
-toNameAndFlag = (x)-> [filepart(x), flag(x)]
+toNameAndFlag = (x)->
+  xx = filepart(x).split ' -> '
+  renamed = if xx.length is 1 then '' else xx[0]
+  [fp.last(xx), flag(x) + renamed]
 d = (x)->
   flags = x.reduce(mergeStatus, '  ')
   return flags if flags is '!!' or flags is '??'
@@ -78,6 +81,6 @@ mergeFlag = (a,b)->
   else if a >= 'A' and b >= 'A' then 'X'
   else if a < b then b
   else a
-mergeStatus = (r,[_, s])-> mergeFlag(r[0], s[0]) + mergeFlag(r[1], s[1])
+mergeStatus = (r,[_, s])-> mergeFlag(r[0], s[0]) + mergeFlag(r[1], s[1]) + s.slice 2
 
 module.exports = git

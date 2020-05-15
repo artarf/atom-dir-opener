@@ -266,20 +266,30 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
     _s = statuses[ks[0]]
     _status = -> _s
   layer = getLayers(editor, ['gitstatus'])[0]
-  writeGitStatusPart(editor, _status, layer, _.chunk(items, 50), 5, p)
+  linkLayer = getLayers(editor, ['link'])[0]
+  writeGitStatusPart(editor, _status, layer, linkLayer, _.chunk(items, 50), 5, p)
 
-writeGitStatusPart = (editor, statuses, layer, chunks, i, p)->
+writeGitStatusPart = (editor, statuses, layer, linkLayer, chunks, i, p)->
   return if editor.getPath() isnt p or chunks.length is 0
   items = chunks.shift()
   for [item] in items
     item = item.slice(0, -1) if item.endsWith path.sep
-    if x = layer.findMarkers(startBufferRow: i++)?[0]
-      s = statuses item
+    row = i++
+    if x = layer.findMarkers(startBufferRow: row)?[0]
+      ss = statuses item
+      s = ss.slice 0, 2
       range = x.getBufferRange()
-      if s isnt editor.getTextInBufferRange range
+      oldval = editor.getTextInBufferRange range
+      if s isnt oldval
         editor.setTextInBufferRange range, s, bypassReadOnly: true
-        editor.buffer.clearUndoStack()
-  window.requestAnimationFrame -> writeGitStatusPart(editor, statuses, layer, chunks, i, p)
+        if oldval[0] is 'R'
+          r = linkLayer.findMarkers(startBufferRow: row)?[0].getBufferRange()
+          editor.setTextInBufferRange r, '', bypassReadOnly: true
+        else if ss.length > 2
+          r = linkLayer.findMarkers(startBufferRow: row)?[0].getBufferRange()
+          editor.setTextInBufferRange r, "(was #{ss.slice 2})", bypassReadOnly: true
+  editor.buffer.clearUndoStack()
+  window.requestAnimationFrame -> writeGitStatusPart(editor, statuses, layer, linkLayer, chunks, i, p)
 
 writeGitSummary = (editor, repo)->
   {hasStaged, hasChanges, balance, branch} = repo.watch
