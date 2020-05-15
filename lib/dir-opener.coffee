@@ -258,9 +258,9 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
   workdir = path.dirname(root)
   dir = editor.getPath()
   statuses = git.parseStatus status, path.relative workdir, dir
-  deleted = Object.entries(statuses).filter ([_,s])-> s[0] is 'D' or s[1] is 'D'
   _stats = Object.entries(stats)
-  _stats.push [name] for [name] in deleted
+  for name, s of statuses when s[0] is 'D' or s[1] is 'D'
+    _stats.push [name]
   items = _stats.sort comparers[sortOrder]
   _status = (name)-> statuses[name] ? '  '
   ks = Object.keys(statuses)
