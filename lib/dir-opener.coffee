@@ -111,13 +111,15 @@ module.exports =
           checkdir(p, this)
         continue unless stats = dirstate.stats
         return if @_timer? # abort if new update was triggered while waiting
-        if _stateChange = stateChanged estate.prevState, stats, @sortOrder, p
+        prev = estate.prevState
+        statsChanged = not _.isEqualWith estate.stats, prev?.stats, utils.statsEqual
+        if statsChanged or p isnt prev?.uri or sortOrder isnt @sortOrder
           writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
           estate.prevState = {uri:p, @sortOrder, stats}
         if groot = dirstate.gitRoot
           return if @_timer?
           if repo = @repositories.get(groot)
-            repo.watch.check() if _stateChange
+            repo.watch.check() if statsChanged
             writeGitSummary editor, repo
             continue unless status = repo.watch.status
             return if @_timer?
@@ -177,11 +179,6 @@ getSelectedEntries = (editor, vimstate)->
       a.add _.first getFields editor, i, ['name']
   return Array.from a.values() if a.size
   getFields(editor, sels[0].start.row, ['name'])
-
-stateChanged = (prev = {}, stats, sortOrder, uri)->
-  return true if uri isnt prev.uri
-  return true if sortOrder isnt prev.sortOrder
-  not _.isEqualWith stats, prev.stats, utils.statsEqual
 
 checkdir = (p, pack, watch)->
   try
