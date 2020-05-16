@@ -91,7 +91,14 @@ module.exports =
       'dir-opener:open-directory': =>
         if e = atom.workspace.getActivePaneItem()
           if @editors.has(e)
-            # # TODO: cycle project dirs
+            # cycle projects roots
+            # - if somewhere below root -> select root
+            # - if dir is a root -> select next root
+            paths = atom.project.getPaths()
+            return if paths.length < 1
+            p = path.resolve e.getPath()
+            i = paths.findIndex (pp)-> p.startsWith pp
+            e.buffer.setPath paths[i + (p is paths[i])] ? paths[0]
             return
           if _path = e?.getPath?()
             # Fool other openers that are extension based
