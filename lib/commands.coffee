@@ -15,6 +15,15 @@ goHome = (_, {editor})-> editor.buffer.setPath os.homedir()
 
 openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getPath()
 
+ToggleInProject = (_, {editor})->
+  ep = editor.getPath()
+  pp = atom.project.getPaths().filter (pp)-> pp isnt ep and pp.startsWith ep
+  if pp.length
+    atom.notifications.addError "This is parent for other project", dismissable: true, detail:pp.join '\n'
+  else if pp = atom.project.getPaths().find (pp)-> ep.startsWith pp
+    atom.project.removePath pp
+  else atom.project.addPath ep
+
 toggleRow = (_, {editor, vimState})->
   return unless vimState
   {row} = editor.getCursorBufferPosition()
@@ -104,6 +113,7 @@ module.exports =
   'dir-opener:toggle-selected-and-next-row': toggleRow
   'dir-opener:git-toggle-staged': gitToggleStaged
   'dir-opener:git-reset-head': gitReset
+  'dir-opener:toggle-in-project': ToggleInProject
   'dir-opener:activate-linewise-visual-mode': (_, {editor})->
     return if editor.getCursorBufferPosition().row < 3
     atom.commands.dispatch editor.element, 'vim-mode-plus:activate-linewise-visual-mode'

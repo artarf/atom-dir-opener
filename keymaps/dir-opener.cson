@@ -22,6 +22,7 @@
   'shift-y shift-f': 'dir-opener:copy-fullpaths-to-clipboard'
   'g i a': 'dir-opener:git-toggle-staged'
   'g i r': 'dir-opener:git-reset-head'
+  'shift-p': 'dir-opener:toggle-in-project'
 
   # disable some vim-mode-plus keybindings
   'c': 'dir-opener:noop'
