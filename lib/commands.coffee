@@ -15,6 +15,15 @@ goHome = (_, {editor})-> editor.buffer.setPath os.homedir()
 
 openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getPath()
 
+gitCommit = (_, {editor, repo})->
+  return unless repo
+  dir = editor.getPath()
+  unless repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
+    atom.notifications.addInfo "Nothing to commit"
+    return
+  commit = require './git-commit'
+  commit repo.root
+
 ToggleInProject = (_, {editor})->
   ep = editor.getPath()
   pp = atom.project.getPaths().filter (pp)-> pp isnt ep and pp.startsWith ep
@@ -115,6 +124,7 @@ module.exports =
   'dir-opener:git-toggle-staged': gitToggleStaged
   'dir-opener:git-reset-head': gitReset
   'dir-opener:toggle-in-project': ToggleInProject
+  'dir-opener:git-commit': gitCommit
   'dir-opener:activate-linewise-visual-mode': (_, {editor})->
     return if editor.getCursorBufferPosition().row < 3
     atom.commands.dispatch editor.element, 'vim-mode-plus:activate-linewise-visual-mode'
