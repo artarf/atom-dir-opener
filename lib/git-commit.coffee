@@ -14,7 +14,7 @@ prepFile = ({status, commitMessageFile, template}) ->
 
 commit = (commitMessageFile) ->
   dir = Path.dirname Path.dirname commitMessageFile
-  git 'commit', "--cleanup=whitespace", "--file=#{commitMessageFile}", dir
+  git 'commit', "--cleanup=strip", "--file=#{commitMessageFile}", dir
 
 module.exports = (gitRoot) ->
   commitMessageFile = Path.join(gitRoot, 'COMMIT_EDITMSG')
