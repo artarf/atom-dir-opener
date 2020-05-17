@@ -17,7 +17,6 @@ openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getPath()
 
 quickAmend = (_, {editor, repo})->
   return unless repo
-  dir = editor.getPath()
   if balance = repo.watch.balance
     balance = balance.split /\s+/
     if balance[1] is '0'
@@ -30,7 +29,6 @@ quickAmend = (_, {editor, repo})->
 
 gitCommit = (_, {editor, repo})->
   return unless repo
-  dir = editor.getPath()
   unless repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
     atom.notifications.addInfo "Nothing to commit"
     return
