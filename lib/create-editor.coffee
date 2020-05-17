@@ -11,7 +11,7 @@ class DirectoryBuffer extends TextBuffer
   getPath: ->
   setPath: (uri)->
     uri = path.resolve uri
-    return if uri is @getPath()
+    return if uri is @file?.getPath()
     @setFile {
       getPath: -> uri
       existsSync: -> true
@@ -23,8 +23,9 @@ class DirectoryView extends TextEditor
     params.buffer ?= new DirectoryBuffer()
     super params
   serialize: -> null
-  getPath: -> @buffer.file.getPath()
-  getTitle: -> @getFileName() + "/"
+  getDirectoryPath: -> @buffer.file.getPath()
+  getTitle: -> path.basename(@getDirectoryPath()) + "/"
+  getLongTitle: -> @getDirectoryPath() + "/"
 
 viewDefaults =
   readOnly: true

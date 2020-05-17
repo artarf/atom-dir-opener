@@ -46,7 +46,7 @@ module.exports =
     keymapFile = path.join path.dirname(__dirname), 'keymaps', 'dir-opener.cson'
     atom.keymaps.reloadKeymap keymapFile, priority: 1
     once = atom.workspace.observeTextEditors (e)->
-      if (not e.getPath?()) and e.getTitle() is 'untitled'
+      if (not e.getDirectoryPath?()) and e.getTitle() is 'untitled'
         atom.workspace.paneForItem(e)?.destroyItem(e)
         if dir = atom.project.rootDirectories[0]
           atom.workspace.open dir.path + '/'
@@ -96,7 +96,7 @@ module.exports =
             # - if dir is a root -> select next root
             paths = atom.project.getPaths()
             return if paths.length < 1
-            p = path.resolve e.getPath()
+            p = e.getDirectoryPath()
             i = paths.findIndex (pp)-> p.startsWith pp
             e.buffer.setPath paths[i + (p is paths[i])] ? paths[0]
             return
@@ -110,7 +110,7 @@ module.exports =
     @_timer ?= window.requestAnimationFrame =>
       @_timer = null
       for [editor, estate] from @editors
-        p = path.resolve editor.getPath() # drop trailing /
+        p = path.resolve editor.getDirectoryPath() # drop trailing /
         unless dirstate = @directories.get(p)
           dirstate = {directory: p, stats: null}
           @directories.set p, dirstate
@@ -133,8 +133,8 @@ module.exports =
 
   backoff: (dir)->
       for [editor, state] from @editors
-        if dir is path.resolve editor.getPath()
-          state.history.push editor.getPath()
+        if dir is path.resolve editor.getDirectoryPath()
+          state.history.push editor.getDirectoryPath()
           editor.buffer.setPath path.dirname dir
       @scheduleUpdate()
 
@@ -161,7 +161,7 @@ module.exports =
 
 runCommand = (editor, {directories, repositories, editors, vmp})->
   (f)-> (event)->
-    p = path.resolve editor.getPath()
+    p = path.resolve editor.getDirectoryPath()
     dir = directories.get(p)
     repo = repositories.get(dir.gitRoot) if dir.gitRoot
     vimState = vmp.getEditorState(editor)
@@ -172,7 +172,7 @@ runCommand = (editor, {directories, repositories, editors, vmp})->
 fileAtCursor = (editor)->
   {row} = editor.getCursorBufferPosition()
   return if row < 3
-  uri = editor.getPath()
+  uri = editor.getDirectoryPath()
   path.normalize path.join uri, getFields(editor, row, ['name'])[0]
 
 getSelectedEntries = (editor, vimstate)->
@@ -209,7 +209,7 @@ checkdir = (p, pack, watch)->
 # returns the item that shoud be selected
 updateHistory = (editor, state)->
   history = state.history ?= []
-  uri = editor.getPath()
+  uri = editor.getDirectoryPath()
   {row} = editor.getCursorBufferPosition()
   if row > 0
     if name = getFields editor, row, ['name']
@@ -236,7 +236,7 @@ updateHistory = (editor, state)->
 
 paintColors = (editor, chunks, startRow, colspace, p)->
   return unless x = chunks.shift()
-  return if p isnt editor.getPath() # user has moved on
+  return if p isnt editor.getDirectoryPath() # user has moved on
   for row, i in x
     r = startRow + i
     start = 0
@@ -262,7 +262,7 @@ paintColors = (editor, chunks, startRow, colspace, p)->
 
 writeGitStatus = (editor, status, stats, sortOrder, root)->
   workdir = path.dirname(root)
-  dir = editor.getPath()
+  dir = editor.getDirectoryPath()
   statuses = git.parseStatus status, path.relative workdir, dir
   _stats = Object.entries(stats)
   for name, s of statuses when s[0] is 'D' or s[1] is 'D'
@@ -277,7 +277,7 @@ writeGitStatus = (editor, status, stats, sortOrder, root)->
   writeGitStatusPart(editor, _status, layers, _.chunk(items, 50), 5, dir)
 
 writeGitStatusPart = (editor, statuses, layers, chunks, i, p)->
-  return if editor.getPath() isnt p or chunks.length is 0
+  return if editor.getDirectoryPath() isnt p or chunks.length is 0
   items = chunks.shift()
   for [item, stats] in items
     item = item.slice(0, -1) if item.endsWith path.sep
@@ -334,7 +334,7 @@ writeGitSummary = (editor, repo)->
   branch += formatBalance balance
   workdir = path.dirname(repo.root)
   mark editor, [[1, 0], [1, workdir.length]], 'git-root'
-  dir = editor.getPath()
+  dir = editor.getDirectoryPath()
   range = editor.buffer.clipRange [[1,dir.length], [1, (editor.buffer.lineForRow 1).length]]
   editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
   editor.buffer.clearUndoStack()
@@ -355,7 +355,7 @@ formatBalance = (balance)->
 
 writeStats = (editor, stats, proj, sortOrder, selected)->
   items = Object.entries(stats).sort comparers[sortOrder]
-  dir = editor.getPath()
+  dir = editor.getDirectoryPath()
   x = items.map formatEntry
   x.unshift formatEntry ['../', fs.lstatSync path.dirname dir]
   x.unshift formatEntry ['./', fs.lstatSync dir]
@@ -377,7 +377,7 @@ writeStats = (editor, stats, proj, sortOrder, selected)->
   editor.setCursorBufferPosition [selectedRow, 0]
   editor.element.scrollToTop() if selectedRow <= screenHeight(editor)
   editor.buffer.clearUndoStack()
-  paintColors editor, _.chunk(x, 300), 3, colspace, editor.getPath()
+  paintColors editor, _.chunk(x, 300), 3, colspace, editor.getDirectoryPath()
   return
 
 mark = (editor, range, cls)->

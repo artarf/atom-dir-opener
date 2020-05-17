@@ -13,7 +13,7 @@ openExternal = (_, {fileAtCursor})-> electron.shell.openItem fileAtCursor if fil
 
 goHome = (_, {editor})-> editor.buffer.setPath os.homedir()
 
-openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getPath()
+openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getDirectoryPath()
 
 assertHasStaged = (repo)->
   return true if repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
@@ -41,7 +41,7 @@ undoLastGitCommit = (_, {repo})->
     atom.notifications.addError 'Undo commit failed', detail: e.message, dismissable: true
 
 ToggleInProject = (_, {editor})->
-  ep = editor.getPath()
+  ep = editor.getDirectoryPath()
   pp = atom.project.getPaths().filter (pp)-> pp isnt ep and pp.startsWith ep
   if pp.length
     atom.notifications.addError "This is parent for other project", dismissable: true, detail:pp.join '\n'
@@ -103,7 +103,7 @@ gitReset = (_, {fileAtCursor, selected})->
 gitToggleStaged = (_, {selected, editor, repo})->
   return unless selected.length
   return unless repo
-  dir = editor.getPath()
+  dir = editor.getDirectoryPath()
   status = git.parseStatus repo.watch.status, path.relative path.dirname(repo.root), dir
   add = []
   restore = []
@@ -124,7 +124,7 @@ gitToggleStaged = (_, {selected, editor, repo})->
     atom.notifications.addWarning "Directories not toggled: #{dirs.join ', '}", dismissable: true
 
 copyFullpathsToClipboard = (_, {editor, selected, vimState})->
-  uri = editor.getPath()
+  uri = editor.getDirectoryPath()
   entries = selected.map (a)-> path.join uri, a
   setTextToRegister vimState, entries.join '\n'
   clearSelections(editor, vimState)
