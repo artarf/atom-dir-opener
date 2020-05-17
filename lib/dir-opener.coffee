@@ -7,7 +7,7 @@ _ = require 'lodash'
 {getLengths, getLayers, getFields, leftpad, rightpad, listFiles} = utils = require './utils'
 git = require './git'
 GitWatch = require './git-watch'
-formatEntry = require './format'
+format = require './format'
 PREFIX = 'dir-opener:/'
 
 sleep = (ms)-> new Promise (resolve)-> setTimeout resolve, ms
@@ -331,7 +331,7 @@ writeGitSummary = (editor, repo)->
     branch += ' +'
   else if hasChanges
     branch += ' *'
-  branch += formatBalance balance
+  branch += format.balance balance
   workdir = path.dirname(repo.root)
   mark editor, [[1, 0], [1, workdir.length]], 'git-root'
   dir = editor.getDirectoryPath()
@@ -339,26 +339,12 @@ writeGitSummary = (editor, repo)->
   editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
   editor.buffer.clearUndoStack()
 
-formatBalance = (balance)->
-  return '' unless balance
-  if balance
-    if balance is '0\t0'
-      ' u='
-    else
-      balance = balance.split /\s+/
-      if balance[0] is '0'
-        ' u+' + balance[1]
-      else if balance[1] is '0'
-        ' u-' + balance[0]
-      else
-        ' u+' + balance.reverse().join('-')
-
 writeStats = (editor, stats, proj, sortOrder, selected)->
   items = Object.entries(stats).sort comparers[sortOrder]
   dir = editor.getDirectoryPath()
-  x = items.map formatEntry
-  x.unshift formatEntry ['../', fs.lstatSync path.dirname dir]
-  x.unshift formatEntry ['./', fs.lstatSync dir]
+  x = items.map format.statsRow
+  x.unshift format.statsRow ['../', fs.lstatSync path.dirname dir]
+  x.unshift format.statsRow ['./', fs.lstatSync dir]
   lengths = getLengths(x)
   colspace = 2
   for row, i in x
