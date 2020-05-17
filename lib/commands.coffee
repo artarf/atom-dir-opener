@@ -15,6 +15,10 @@ goHome = (_, {editor})-> editor.buffer.setPath os.homedir()
 
 openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getPath()
 
+assertHasStaged = (repo)->
+  return true if repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
+  atom.notifications.addInfo "Nothing to commit"
+
 quickAmend = (_, {editor, repo})->
   return unless repo
   if balance = repo.watch.balance
@@ -22,17 +26,12 @@ quickAmend = (_, {editor, repo})->
     if balance[1] is '0'
       atom.notifications.addWarning "Last commit is already pushed", dismissable: true
       return
-  unless repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
-    atom.notifications.addInfo "Nothing to commit"
-    return
-  require('./git-commit').amendWithSameMessage repo.root
+  if assertHasStaged(repo)
+    require('./git-commit').amendWithSameMessage repo.root
 
 gitCommit = (_, {editor, repo})->
-  return unless repo
-  unless repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
-    atom.notifications.addInfo "Nothing to commit"
-    return
-  require('./git-commit').commitWithEditor repo.root
+  if repo and assertHasStaged(repo)
+    require('./git-commit').commitWithEditor repo.root
 
 undoLastGitCommit = (_, {repo})->
   return unless repo
