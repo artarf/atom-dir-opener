@@ -10,6 +10,7 @@ class DirectoryBuffer extends TextBuffer
   # - It might be big and then git-utils repo.getPath() will then hang everything
   getPath: ->
   setPath: (uri)->
+    uri = path.resolve uri
     return if uri is @getPath()
     @setFile {
       getPath: -> uri
