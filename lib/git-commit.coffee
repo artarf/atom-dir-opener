@@ -16,7 +16,7 @@ commit = (commitMessageFile) ->
   dir = Path.dirname Path.dirname commitMessageFile
   git 'commit', "--cleanup=strip", "--file=#{commitMessageFile}", dir
 
-module.exports = (gitRoot) ->
+commitWithEditor = (gitRoot)->
   commitMessageFile = Path.join(gitRoot, 'COMMIT_EDITMSG')
   dir = Path.dirname gitRoot
   try
@@ -43,3 +43,16 @@ module.exports = (gitRoot) ->
   catch e
     console.error e
     atom.notifications.addError "Commit failed", detail: e, dismissable:true
+
+amendWithSameMessage = (gitRoot)->
+  commitMessageFile = Path.join(gitRoot, 'COMMIT_EDITMSG')
+  dir = Path.dirname gitRoot
+  try
+    {stdout} = await git 'whatchanged', '-1', '--format=%s%n%n%b%x00', dir
+    await fs.writeFile commitMessageFile, stdout.slice(0, stdout.indexOf('\0'))
+    await git 'commit', "--cleanup=strip", '--amend', "--file=#{commitMessageFile}", dir
+  catch e
+    console.error e
+    atom.notifications.addError "Commit failed", detail: e.stdout, dismissable:true
+
+module.exports = {commitWithEditor, amendWithSameMessage}

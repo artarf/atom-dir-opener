@@ -15,14 +15,21 @@ goHome = (_, {editor})-> editor.buffer.setPath os.homedir()
 
 openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getPath()
 
+quickAmend = (_, {editor, repo})->
+  return unless repo
+  dir = editor.getPath()
+  unless repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
+    atom.notifications.addInfo "Nothing to commit"
+    return
+  require('./git-commit').amendWithSameMessage repo.root
+
 gitCommit = (_, {editor, repo})->
   return unless repo
   dir = editor.getPath()
   unless repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
     atom.notifications.addInfo "Nothing to commit"
     return
-  commit = require './git-commit'
-  commit repo.root
+  require('./git-commit').commitWithEditor repo.root
 
 undoLastGitCommit = (_, {repo})->
   return unless repo
@@ -132,6 +139,7 @@ module.exports =
   'dir-opener:git-reset-head': gitReset
   'dir-opener:toggle-in-project': ToggleInProject
   'dir-opener:git-commit': gitCommit
+  'dir-opener:quick-amend': quickAmend
   'dir-opener:undo-last-commit': undoLastGitCommit
   'dir-opener:activate-linewise-visual-mode': (_, {editor})->
     return if editor.getCursorBufferPosition().row < 3
