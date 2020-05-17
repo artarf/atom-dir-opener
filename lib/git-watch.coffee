@@ -24,6 +24,9 @@ class GitWatch
   send: ->
     return if @closed
     @sendRequest = null
+    # atom GitRepository does not correctly follow changes -> Help it!
+    if r = atom?.project.repositories.find (r)=> r.getPath() is @root
+      setTimeout -> r.refreshStatus()
     @callback()
   setProperty: (name, value)->
     return if @closed
