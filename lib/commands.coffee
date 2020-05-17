@@ -24,6 +24,13 @@ gitCommit = (_, {editor, repo})->
   commit = require './git-commit'
   commit repo.root
 
+undoLastGitCommit = (_, {repo})->
+  return unless repo
+  try
+    await git 'reset', '--soft', 'HEAD~', path.dirname repo.root
+  catch e
+    atom.notifications.addError 'Undo commit failed', detail: e.message, dismissable: true
+
 ToggleInProject = (_, {editor})->
   ep = editor.getPath()
   pp = atom.project.getPaths().filter (pp)-> pp isnt ep and pp.startsWith ep
@@ -125,6 +132,7 @@ module.exports =
   'dir-opener:git-reset-head': gitReset
   'dir-opener:toggle-in-project': ToggleInProject
   'dir-opener:git-commit': gitCommit
+  'dir-opener:undo-last-commit': undoLastGitCommit
   'dir-opener:activate-linewise-visual-mode': (_, {editor})->
     return if editor.getCursorBufferPosition().row < 3
     atom.commands.dispatch editor.element, 'vim-mode-plus:activate-linewise-visual-mode'
