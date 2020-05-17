@@ -119,15 +119,13 @@ module.exports =
         continue unless stats = dirstate.stats
         return if @_timer? # abort if new update was triggered while waiting
         prev = estate.prevState
-        statsChanged = not _.isEqualWith estate.stats, prev?.stats, utils.statsEqual
         proj = atom.project.getPaths().find (d)-> p.startsWith d
-        if statsChanged or p isnt prev?.uri or sortOrder isnt @sortOrder or proj isnt prev?.proj
+        if estate.stats isnt prev?.stats or p isnt prev?.uri or sortOrder isnt @sortOrder or proj isnt prev?.proj
           writeStats editor, stats, proj, @sortOrder, updateHistory editor, estate
           estate.prevState = {uri:p, @sortOrder, stats, proj}
         if groot = dirstate.gitRoot
           return if @_timer?
           if repo = @repositories.get(groot)
-            repo.watch.check() if statsChanged
             writeGitSummary editor, repo
             continue unless status = repo.watch.status
             return if @_timer?
@@ -192,17 +190,20 @@ checkdir = (p, pack, watch)->
   try
     assert (await fs.promises.stat p).isDirectory()
     dirstate = pack.directories.get(p)
-    dirstate.stats = await utils.getStats(p)
-    pack.scheduleUpdate()
+    stats = await utils.getStats(p)
+    unless _.isEqualWith stats, dirstate.stats, utils.statsEqual
+      dirstate.stats = stats
+      if dirstate.gitRoot and repo = pack.repositories.get(dirstate.gitRoot)
+        repo.watch.check()
+      pack.scheduleUpdate()
     unless watch?
       dirstate.watch = watch = fs.watch p, -> checkdir p, pack, watch
-    true
   catch e
     watch?.close()
     pack.directories.delete p
     atom.notifications.addWarning p, detail:e.message, dismissable: true
     pack.backoff p
-    false
+  return
 
 # updates history, makes sure it does not grow too big
 # returns the item that shoud be selected
