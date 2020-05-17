@@ -75,25 +75,26 @@ gitReset = (_, {fileAtCursor, selected})->
     _file = path.join _base, file
     repo.checkoutHead _file
 
-gitToggleStaged = (_, {fileAtCursor, selected})->
-  return unless file = fileAtCursor
-  return unless repo = git.utils file
-  _file = repo.relativize file
-  _base = path.dirname _file
-  dir = path.dirname file
+gitToggleStaged = (_, {selected, editor, repo})->
+  return unless selected.length
+  return unless repo
+  dir = editor.getPath()
+  status = git.parseStatus repo.watch.status, path.relative path.dirname(repo.root), dir
+  add = []
   restore = []
   dirs = []
   for file in selected
+    continue unless s = status[file]
     if file.endsWith path.sep
       dirs.push file
-      return
-    _file = path.join _base, file
-    if repo.isPathStaged _file
+    else if 'MCDARU'.includes s[0]
       restore.push file
-    else
-      await git.add fileAtCursor
+    else if s[1] isnt ' ' and s[1] isnt '!'
+      add.push file
+  if add.length
+    git 'add', add..., dir
   if restore.length
-    await git 'restore', '--staged', restore..., dir
+    git 'restore', '--staged', restore..., dir
   if dirs.length
     atom.notifications.addWarning "Directories not toggled: #{dirs.join ', '}", dismissable: true
 
