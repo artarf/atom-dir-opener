@@ -104,6 +104,7 @@ module.exports =
             # Fool other openers that are extension based
             return atom.workspace.open PREFIX + _path + path.sep + '..'
         atom.workspace.open defaultDir()
+    @subscriptions.add atom.project.onDidChangePaths => @scheduleUpdate()
   useVimModePlus: (@vmp)->
   scheduleUpdate: ->
     @_timer ?= window.requestAnimationFrame =>
@@ -111,8 +112,7 @@ module.exports =
       for [editor, estate] from @editors
         p = path.resolve editor.getPath() # drop trailing /
         unless dirstate = @directories.get(p)
-          proj = atom.project.getPaths().find (d)-> p.startsWith d
-          dirstate = {directory: p, stats: null, proj}
+          dirstate = {directory: p, stats: null}
           @directories.set p, dirstate
           @getGitRoot(p)
           checkdir(p, this)
@@ -120,9 +120,10 @@ module.exports =
         return if @_timer? # abort if new update was triggered while waiting
         prev = estate.prevState
         statsChanged = not _.isEqualWith estate.stats, prev?.stats, utils.statsEqual
-        if statsChanged or p isnt prev?.uri or sortOrder isnt @sortOrder
-          writeStats editor, stats, dirstate.proj, @sortOrder, updateHistory editor, estate
-          estate.prevState = {uri:p, @sortOrder, stats}
+        proj = atom.project.getPaths().find (d)-> p.startsWith d
+        if statsChanged or p isnt prev?.uri or sortOrder isnt @sortOrder or proj isnt prev?.proj
+          writeStats editor, stats, proj, @sortOrder, updateHistory editor, estate
+          estate.prevState = {uri:p, @sortOrder, stats, proj}
         if groot = dirstate.gitRoot
           return if @_timer?
           if repo = @repositories.get(groot)
