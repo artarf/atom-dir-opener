@@ -24,6 +24,7 @@
   'g i r': 'dir-opener:git-reset-head'
   'shift-p': 'dir-opener:toggle-in-project'
   'C': 'dir-opener:git-commit'
+  'g a': 'dir-opener:quick-amend'
   'U': 'dir-opener:undo-last-commit'
 
   # disable some vim-mode-plus keybindings
