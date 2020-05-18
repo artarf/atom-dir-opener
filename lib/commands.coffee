@@ -4,6 +4,7 @@ electron = require 'electron'
 _ = require 'lodash'
 {getFields} = require './utils'
 git = require './git'
+commit = require('./git-commit')
 
 setTextToRegister = (vimState, text)->
   text += '\n' unless text.endsWith '\n'
@@ -18,16 +19,25 @@ openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getDirect
 assertHasStaged = (repo)->
   return true if repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
   atom.notifications.addInfo "Nothing to commit"
+  return false
+
+isLastPushed = (repo)->
+  return unless balance = repo.watch.balance
+  balance = balance.split /\s+/
+  if balance[1] is '0'
+    atom.notifications.addWarning "Last commit is already pushed", dismissable: true
+    return true
 
 quickAmend = (_, {editor, repo})->
   return unless repo
-  if balance = repo.watch.balance
-    balance = balance.split /\s+/
-    if balance[1] is '0'
-      atom.notifications.addWarning "Last commit is already pushed", dismissable: true
-      return
+  return if isLastPushed repo
   if assertHasStaged(repo)
     require('./git-commit').amendWithSameMessage repo.root
+
+gitAmend = (_, {editor, repo})->
+  return unless repo
+  return if isLastPushed repo
+  require('./git-commit').commitWithEditor repo.root, true
 
 gitCommit = (_, {editor, repo})->
   if repo and assertHasStaged(repo)
@@ -142,6 +152,7 @@ module.exports =
   'dir-opener:toggle-in-project': ToggleInProject
   'dir-opener:git-commit': gitCommit
   'dir-opener:quick-amend': quickAmend
+  'dir-opener:git-amend': gitAmend
   'dir-opener:undo-last-commit': undoLastGitCommit
   'dir-opener:activate-linewise-visual-mode': (_, {editor})->
     return if editor.getCursorBufferPosition().row < 3

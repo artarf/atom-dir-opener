@@ -20,11 +20,12 @@
   'shift-y shift-y': 'dir-opener:copy-names-to-clipboard'
   'shift-y f': 'dir-opener:copy-fullpaths-to-clipboard'
   'shift-y shift-f': 'dir-opener:copy-fullpaths-to-clipboard'
-  'g i a': 'dir-opener:git-toggle-staged'
+  'g i s': 'dir-opener:git-toggle-staged'
   'g i r': 'dir-opener:git-reset-head'
   'shift-p': 'dir-opener:toggle-in-project'
   'C': 'dir-opener:git-commit'
   'g a': 'dir-opener:quick-amend'
+  'g i a': 'dir-opener:git-amend'
   'U': 'dir-opener:undo-last-commit'
 
   # disable some vim-mode-plus keybindings
