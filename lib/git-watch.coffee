@@ -26,7 +26,9 @@ class GitWatch
     @sendRequest = null
     # atom GitRepository does not correctly follow changes -> Help it!
     if r = atom?.project.repositories.find (r)=> r.getPath() is @root
-      setTimeout -> r.refreshStatus()
+      setTimeout ->
+        r.refreshIndex()
+        r.refreshStatus()
     @callback()
   setProperty: (name, value)->
     return if @closed
