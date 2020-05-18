@@ -8,14 +8,6 @@ re_git_instructions = /\s*\(.*\)\n/g
 comment = (str)-> '# ' + str.trim().replace(/\n/g, "\n# ").slice(0, -3)
 content = (arr)-> arr.filter((x)-> x?.trim()).join '\n'
 
-prepFile = ({status, commitMessageFile, template}) ->
-  status = status.replace(re_git_instructions, "\n")
-  fs.writeFile commitMessageFile, content [template, comment(status)]
-
-commit = (commitMessageFile) ->
-  dir = Path.dirname Path.dirname commitMessageFile
-  git 'commit', "--cleanup=strip", "--file=#{commitMessageFile}", dir
-
 commitWithEditor = (gitRoot)->
   commitMessageFile = Path.join(gitRoot, 'COMMIT_EDITMSG')
   dir = Path.dirname gitRoot
@@ -26,7 +18,8 @@ commitWithEditor = (gitRoot)->
     console.warn 'git template:', e.message
   try
     status = await git 'status', dir
-    await prepFile {status:status.stdout, commitMessageFile, template}
+    status = comment status.stdout.replace(re_git_instructions, "\n")
+    await fs.writeFile commitMessageFile, content [template, comment(status)]
     if pane = atom.workspace.paneForURI(commitMessageFile)
       e = pane.itemForURI(commitMessageFile)
       pane.activate()
@@ -38,7 +31,7 @@ commitWithEditor = (gitRoot)->
       listener?.dispose()
     listener = e.onDidSave ->
       listener.dispose()
-      await commit(commitMessageFile)
+      await git 'commit', "--cleanup=strip", "--file=#{commitMessageFile}", dir
       atom.workspace.paneForURI(commitMessageFile).itemForURI(commitMessageFile)?.destroy()
   catch e
     console.error e
