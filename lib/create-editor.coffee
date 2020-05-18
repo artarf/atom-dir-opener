@@ -3,29 +3,20 @@
 {TextEditor, TextBuffer} = require 'atom'
 path = require 'path'
 
-class DirectoryBuffer extends TextBuffer
-  release: -> # maybe needed, was somewhere, test without
-  isModified: -> false
-  # disable buffer.getPath() because project wants to start watching if it is a git repo.
-  # - It might be big and then git-utils repo.getPath() will then hang everything
-  getPath: ->
-  setPath: (uri)->
-    uri = path.resolve uri
-    return if uri is @file?.getPath()
-    @setFile {
-      getPath: -> uri
-      existsSync: -> true
-    }
-
 class DirectoryView extends TextEditor
   constructor: (params)->
     params = Object.assign {}, viewDefaults, params
-    params.buffer ?= new DirectoryBuffer()
+    params.buffer ?= new TextBuffer()
     super params
   serialize: -> null
-  getDirectoryPath: -> @buffer.file.getPath()
+  getDirectoryPath: -> @_uri
+  setPath: (uri)->
+    return if @_uri is uri = path.resolve uri
+    @_uri = uri
+    @emitter.emit 'did-change-title'
   getTitle: -> path.basename(@getDirectoryPath()) + "/"
   getLongTitle: -> @getDirectoryPath() + "/"
+  isModified: -> false
 
 viewDefaults =
   readOnly: true
@@ -37,7 +28,7 @@ viewDefaults =
 
 module.exports = (uri, fields)->
   editor = new DirectoryView()
-  editor.buffer.setPath uri
+  editor.setPath uri
   editor.getElement().classList.add 'dir-opener'
   for field in fields
     layer = editor.addMarkerLayer role: field

@@ -12,9 +12,9 @@ setTextToRegister = (vimState, text)->
 
 openExternal = (_, {fileAtCursor})-> electron.shell.openItem fileAtCursor if fileAtCursor?
 
-goHome = (_, {editor})-> editor.buffer.setPath os.homedir()
+goHome = (_, {editor})-> editor.setPath os.homedir()
 
-openParent = (_, {editor})-> editor.buffer.setPath path.dirname editor.getDirectoryPath()
+openParent = (_, {editor})-> editor.setPath path.dirname editor.getDirectoryPath()
 
 assertHasStaged = (repo)->
   return true if repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
@@ -92,7 +92,7 @@ openChild = (_, {editor, fileAtCursor})->
   {row} = editor.getCursorBufferPosition()
   return if row < 4
   if fileAtCursor.endsWith path.sep
-    editor.buffer.setPath fileAtCursor
+    editor.setPath fileAtCursor
   else
     if editor isnt await atom.workspace.open fileAtCursor
       atom.workspace.paneForItem(editor)?.destroyItem(editor)

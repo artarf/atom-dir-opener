@@ -64,7 +64,7 @@ module.exports =
       catch e
         return
       if editor = atom.workspace.getActivePane().items.find (x)=> @editors.has(x)
-        editor.buffer.setPath uri
+        editor.setPath uri
         if selected
           dirstate = @directories.get(uri)
           items = Object.entries(dirstate.stats).sort comparers[@sortOrder]
@@ -75,7 +75,7 @@ module.exports =
         editor = require('./create-editor')(uri, fields)
         subscriptions = new CompositeDisposable
         subscriptions.add atom.commands.add editor.element, _.mapValues commands, runCommand(editor, this)
-        subscriptions.add editor.onDidChangePath => @scheduleUpdate()
+        subscriptions.add editor.onDidChangeTitle => @scheduleUpdate()
         subscriptions.add editor.onDidDestroy =>
           subscriptions.dispose()
           @editors.delete editor
@@ -98,7 +98,7 @@ module.exports =
             return if paths.length < 1
             p = e.getDirectoryPath()
             i = paths.findIndex (pp)-> p.startsWith pp
-            e.buffer.setPath paths[i + (p is paths[i])] ? paths[0]
+            e.setPath paths[i + (p is paths[i])] ? paths[0]
             return
           if _path = e?.getPath?()
             # Fool other openers that are extension based
@@ -135,7 +135,7 @@ module.exports =
       for [editor, state] from @editors
         if dir is path.resolve editor.getDirectoryPath()
           state.history.push editor.getDirectoryPath()
-          editor.buffer.setPath path.dirname dir
+          editor.setPath path.dirname dir
       @scheduleUpdate()
 
   getGitRoot: (dir)->
