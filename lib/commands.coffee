@@ -10,11 +10,11 @@ setTextToRegister = (vimState, text)->
   text += '\n' unless text.endsWith '\n'
   vimState.register.set(null, {text})
 
-openExternal = (_, {fileAtCursor})-> electron.shell.openItem fileAtCursor if fileAtCursor?
+openExternal = ({fileAtCursor})-> electron.shell.openItem fileAtCursor if fileAtCursor?
 
-goHome = (_, {editor})-> editor.setPath os.homedir()
+goHome = ({editor})-> editor.setPath os.homedir()
 
-openParent = (_, {editor})-> editor.setPath path.dirname editor.getDirectoryPath()
+openParent = ({editor})-> editor.setPath path.dirname editor.getDirectoryPath()
 
 assertHasStaged = (repo)->
   return true if repo.watch.status.split('\n').some (x)=> 'MCDARU'.includes x[0]
@@ -28,29 +28,29 @@ isLastPushed = (repo)->
     atom.notifications.addWarning "Last commit is already pushed", dismissable: true
     return true
 
-quickAmend = (_, {editor, repo})->
+quickAmend = ({editor, repo})->
   return unless repo
   return if isLastPushed repo
   if assertHasStaged(repo)
     require('./git-commit').amendWithSameMessage repo.root
 
-gitAmend = (_, {editor, repo})->
+gitAmend = ({editor, repo})->
   return unless repo
   return if isLastPushed repo
   require('./git-commit').commitWithEditor repo.root, true
 
-gitCommit = (_, {editor, repo})->
+gitCommit = ({editor, repo})->
   if repo and assertHasStaged(repo)
     require('./git-commit').commitWithEditor repo.root
 
-undoLastGitCommit = (_, {repo})->
+undoLastGitCommit = ({repo})->
   return unless repo
   try
     await git 'reset', '--soft', 'HEAD~', path.dirname repo.root
   catch e
     atom.notifications.addError 'Undo commit failed', detail: e.message, dismissable: true
 
-ToggleInProject = (_, {editor})->
+ToggleInProject = ({editor})->
   ep = editor.getDirectoryPath()
   pp = atom.project.getPaths().filter (pp)-> pp isnt ep and pp.startsWith ep
   if pp.length
@@ -68,7 +68,7 @@ moveDown = (editor)->
   else
     editor.moveDown(1)
 
-toggleRow = (_, {editor, vimState})->
+toggleRow = ({editor, vimState})->
   return unless vimState
   {row} = editor.getCursorBufferPosition()
   return moveDown(editor) if row < 5
@@ -97,7 +97,7 @@ clearSelections = (editor, vimState)->
   pos = pos.translate [-1, 0] if pos.row > sel.start.row
   editor.setCursorBufferPosition(pos)
 
-openChild = (_, {editor, fileAtCursor})->
+openChild = ({editor, fileAtCursor})->
   {row} = editor.getCursorBufferPosition()
   return if row < 4
   if fileAtCursor.endsWith path.sep
@@ -106,11 +106,11 @@ openChild = (_, {editor, fileAtCursor})->
     if editor isnt await atom.workspace.open fileAtCursor
       atom.workspace.paneForItem(editor)?.destroyItem(editor)
 
-copyNamesToClipboard = (_, {editor, vimState, selected})->
+copyNamesToClipboard = ({editor, vimState, selected})->
   setTextToRegister vimState, selected.join '\n'
   clearSelections(editor, vimState)
 
-gitReset = (_, {fileAtCursor, selected})->
+gitReset = ({fileAtCursor, selected})->
   return unless file = fileAtCursor
   return unless repo = git.utils file
   _file = repo.relativize file
@@ -119,7 +119,7 @@ gitReset = (_, {fileAtCursor, selected})->
     _file = path.join _base, file
     repo.checkoutHead _file
 
-gitToggleStaged = (_, {selected, editor, repo})->
+gitToggleStaged = ({selected, editor, repo})->
   return unless selected.length
   return unless repo
   dir = editor.getDirectoryPath()
@@ -142,7 +142,7 @@ gitToggleStaged = (_, {selected, editor, repo})->
   if dirs.length
     atom.notifications.addWarning "Directories not toggled: #{dirs.join ', '}", dismissable: true
 
-copyFullpathsToClipboard = (_, {editor, selected, vimState})->
+copyFullpathsToClipboard = ({editor, selected, vimState})->
   uri = editor.getDirectoryPath()
   entries = selected.map (a)-> path.join uri, a
   setTextToRegister vimState, entries.join '\n'
@@ -163,7 +163,7 @@ module.exports =
   'dir-opener:quick-amend': quickAmend
   'dir-opener:git-amend': gitAmend
   'dir-opener:undo-last-commit': undoLastGitCommit
-  'dir-opener:activate-linewise-visual-mode': (_, {editor})->
+  'dir-opener:activate-linewise-visual-mode': ({editor})->
     return if editor.getCursorBufferPosition().row < 3
     atom.commands.dispatch editor.element, 'vim-mode-plus:activate-linewise-visual-mode'
   'dir-opener:noop': -> console.log arguments

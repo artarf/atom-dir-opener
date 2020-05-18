@@ -165,7 +165,7 @@ runCommand = (editor, {directories, repositories, editors, vmp})->
     dir = directories.get(p)
     repo = repositories.get(dir.gitRoot) if dir.gitRoot
     vimState = vmp.getEditorState(editor)
-    f event, Object.assign {editor, dir, repo, vimState},
+    f Object.assign {event, editor, dir, repo, vimState},
       fileAtCursor:fileAtCursor(editor)
       selected:getSelectedEntries(editor, vimState)
 
