@@ -124,23 +124,15 @@ gitToggleStaged = ({selected, editor, repo})->
   return unless repo
   dir = editor.getDirectoryPath()
   status = git.parseStatus repo.watch.status, path.relative path.dirname(repo.root), dir
-  add = []
-  restore = []
-  dirs = []
-  for file in selected
-    continue unless s = status[file]
-    if file.endsWith path.sep
-      dirs.push file
-    else if 'MCDARU'.includes s[0]
-      restore.push file
+  {add, restore} = _.groupBy selected, (file)->
+    file = file.slice 0, -1 if file.endsWith path.sep
+    return unless s = status[file]
+    if 'MCDARU'.includes s[0]
+      "restore"
     else if s[1] isnt ' ' and s[1] isnt '!'
-      add.push file
-  if add.length
-    git 'add', add..., dir
-  if restore.length
-    git 'restore', '--staged', restore..., dir
-  if dirs.length
-    atom.notifications.addWarning "Directories not toggled: #{dirs.join ', '}", dismissable: true
+      "add"
+  git 'add', add..., dir if add?
+  git 'restore', '--staged', restore..., dir if restore?
 
 copyFullpathsToClipboard = ({editor, selected, vimState})->
   uri = editor.getDirectoryPath()
