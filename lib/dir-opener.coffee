@@ -31,7 +31,6 @@ defaultDir = ->
 
 fields = ['mode', 'nlink', 'user', 'group', 'size', 'date', 'gitstatus', 'name', 'link']
 padding = l: leftpad, r: rightpad
-plus = (a,b)-> a + b
 commands = require './commands'
 
 module.exports =
