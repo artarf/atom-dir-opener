@@ -160,14 +160,17 @@ module.exports =
     @repositories.clear()
 
 runCommand = (editor, {directories, repositories, editors, vmp})->
+  pack = arguments[1]
   (f)-> (event)->
     p = path.resolve editor.getDirectoryPath()
     dir = directories.get(p)
     repo = repositories.get(dir.gitRoot) if dir.gitRoot
     vimState = vmp.getEditorState(editor)
-    f Object.assign {event, editor, dir, repo, vimState},
+    upd = await f Object.assign {event, editor, dir, repo, vimState},
       fileAtCursor:fileAtCursor(editor)
       selected:getSelectedEntries(editor, vimState)
+    if upd is 'dir'
+      checkdir p, pack, "do not create new watch"
 
 fileAtCursor = (editor)->
   {row} = editor.getCursorBufferPosition()
@@ -199,7 +202,7 @@ checkdir = (p, pack, watch)->
     unless watch?
       dirstate.watch = watch = fs.watch p, -> checkdir p, pack, watch
   catch e
-    watch?.close()
+    watch?.close?()
     pack.directories.delete p
     atom.notifications.addWarning p, detail:e.message, dismissable: true
     pack.backoff p
