@@ -27,10 +27,18 @@
   'g a': 'dir-opener:quick-amend'
   'g i a': 'dir-opener:git-amend'
   'U': 'dir-opener:undo-last-commit'
+  'p': 'dir-opener:paste-files'
+  'd': '!unset'
+  'd d': 'dir-opener:delete-selected'
+  'D D': 'dir-opener:delete-selected-append'
 
   # disable some vim-mode-plus keybindings
   'c': 'dir-opener:noop'
-  'd': 'dir-opener:noop'
   'i': 'dir-opener:noop'
   'J': 'dir-opener:noop'
   'K': 'dir-opener:noop'
+
+'atom-text-editor.dir-opener:not(.insert-mode)':
+  'd': '!unset'
+  'd d': 'dir-opener:delete-selected'
+  'D D': 'dir-opener:delete-selected-append'

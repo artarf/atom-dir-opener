@@ -1,4 +1,5 @@
 path = require 'path'
+fs = require 'fs'
 os = require 'os'
 electron = require 'electron'
 _ = require 'lodash'
@@ -9,6 +10,55 @@ commit = require('./git-commit')
 setTextToRegister = (vimState, text)->
   text += '\n' unless text.endsWith '\n'
   vimState.register.set(null, {text})
+
+uniqueName = (dir, name)->
+  names = await fs.promises.readdir(dir)
+  return path.join dir, name if not names.includes name
+  if rr = name.match(/_(\d+)$/)
+    name = name.slice 0, rr.index
+    start = 1 + parseInt rr[1]
+  else
+    start = 0
+  m = _.keyBy names.filter (x)-> x.startsWith name + '_'
+  for i in [start..999999] by 1 when name + '_' + i not of m
+    return path.join dir, name + '_' + i
+
+mkdirp = (p)->
+  return Promise.resolve() if fs.existsSync(p)
+  ret = mkdirp path.dirname p
+  fs.promises.mkdir p
+  ret ? p
+
+rimraf = (src)->
+  stat = await fs.promises.lstat(src)
+  if stat.isDirectory()
+    await drimraf(src).then (count)-> fs.rmdir(src, ->); count
+  else
+    await fs.promises.unlink src
+    1
+
+plus = (a,b)-> a + b
+
+drimraf = (dir)->
+  names = await fs.promises.readdir(dir)
+  files = names.map (name)-> path.join dir, name
+  results = await Promise.all files.map rimraf
+  results.reduce plus, 0
+
+copy = (src, tgt)->
+  stat = await fs.promises.lstat(src)
+  if stat.isDirectory()
+    await dircopy src, tgt
+  else
+    await fs.promises.copyFile src, tgt
+    1
+
+dircopy = (src, tgt)->
+  names = await fs.promises.readdir(src)
+  await mkdirp(tgt)
+  results = await Promise.all names.map (name)->
+    copy path.join(src, name), path.join(tgt, name)
+  results.reduce plus, 0
 
 openExternal = ({fileAtCursor})-> electron.shell.openItem fileAtCursor if fileAtCursor?
 
@@ -140,6 +190,36 @@ copyFullpathsToClipboard = ({editor, selected, vimState})->
   setTextToRegister vimState, entries.join '\n'
   clearSelections(editor, vimState)
 
+deleteSelected = (append)-> ({editor, selected, dir, vimState})->
+  tmpdir = await fs.promises.mkdtemp path.join os.tmpdir(), 'dir-opener-'
+  tmpnames = selected.map (a)-> path.join tmpdir, a
+  for p, i in tmpnames
+    await fs.promises.rename path.join(dir.directory, selected[i]), p
+  files = tmpnames.join '\n'
+  if append and x = vimState.register.get()
+    files = x.text + files if x.type is 'linewise'
+  setTextToRegister vimState, files
+  listener = editor.onDidDestroy ->
+    listener.dispose()
+  "dir"
+
+pasteFiles = ({dir})->
+  filecount = 0
+  errors = false
+  for file in atom.clipboard.read().split('\n') when file.trim()
+    unless file.startsWith path.sep
+      file = path.join dir.directory, file
+    filebase = path.basename file
+    try
+      target = await uniqueName dir.directory, filebase
+      filecount += await copy file, target
+    catch e
+      errors = true
+      console.error e
+  atom.notifications.addInfo "Copied #{filecount} files" if filecount
+  atom.notifications.addError "Some errors, see console" if errors
+  'dir'
+
 module.exports =
   'dir-opener:open-parent-directory': openParent
   'dir-opener:open-child': openChild
@@ -155,6 +235,9 @@ module.exports =
   'dir-opener:quick-amend': quickAmend
   'dir-opener:git-amend': gitAmend
   'dir-opener:undo-last-commit': undoLastGitCommit
+  'dir-opener:paste-files': pasteFiles
+  'dir-opener:delete-selected': deleteSelected(false)
+  'dir-opener:delete-selected-append': deleteSelected(true)
   'dir-opener:activate-linewise-visual-mode': ({editor})->
     return if editor.getCursorBufferPosition().row < 3
     atom.commands.dispatch editor.element, 'vim-mode-plus:activate-linewise-visual-mode'
