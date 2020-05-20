@@ -12,6 +12,19 @@
 // atom-text-editor.dir.is-focused .cursor {
 //   opacity: 0 !important;
 // }
+// @text-color-renamed: @text-color-info;
+.status-ignored-icon:before {
+  color: @text-color-ignored;
+}
+.status-modified-icon:before {
+  color: @text-color-modified;
+}
+.status-staged-icon:before {
+  color: @text-color-removed;
+}
+.status-untracked-icon:before {
+  color: @text-color-added;
+}
 atom-text-editor.dir-opener {
   &.vim-mode-plus.normal-mode .cursor {
       border: 0px !important;

@@ -71,7 +71,7 @@ toNameAndFlag = (x)->
   renamed = if xx.length is 1 then '' else xx[0]
   [fp.last(xx), flag(x) + renamed]
 d = (x)->
-  flags = x.reduce(mergeStatus, '  ')
+  flags = _.map(x, _.last).reduce(git.mergeStatus, '  ')
   return flags if flags is '!!' or flags is '??'
   return '??' if flags is '?!' or flags is '!?'
   return flags.replace('!', ' ') if /!/.test flags
@@ -81,6 +81,6 @@ mergeFlag = (a,b)->
   else if a >= 'A' and b >= 'A' then 'X'
   else if a < b then b
   else a
-mergeStatus = (r,[_, s])-> mergeFlag(r[0], s[0]) + mergeFlag(r[1], s[1]) + s.slice 2
+git.mergeStatus = (r,s)-> mergeFlag(r[0], s[0]) + mergeFlag(r[1], s[1]) + s.slice 2
 
 module.exports = git

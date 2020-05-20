@@ -52,6 +52,10 @@ module.exports =
       setTimeout -> once.dispose()
 
     @subscriptions = new CompositeDisposable
+    @subscriptions.add atom.workspace.observeTextEditors (e)->
+      return unless e.constructor.name is 'DirectoryView'
+      if tab = getTab(e)
+        tab.classList.add('icon','icon-file-directory')
     @subscriptions.add atom.workspace.addOpener (uri)=>
       uri = uri.slice PREFIX.length if uri.startsWith PREFIX
       uri = uri.replace '~', os.homedir()
@@ -128,7 +132,12 @@ module.exports =
             writeGitSummary editor, repo
             continue unless status = repo.watch.status
             return if @_timer?
+            unless getTab(editor)
+              @scheduleUpdate()
+              continue
             writeGitStatus editor, status, stats, @sortOrder, groot
+        else
+          setTabIconColor(editor, null)
 
   backoff: (dir)->
       for [editor, state] from @editors
@@ -262,10 +271,41 @@ paintColors = (editor, chunks, startRow, colspace, p)->
       editor.decorateMarker marker, type:'line', class: rowClasses.join ' '
   window.requestAnimationFrame -> paintColors editor, chunks, startRow + 300, colspace, p
 
+IGNORED = 'status-ignored-icon'
+STAGED = 'status-staged-icon'
+CHANGES = 'status-modified-icon'
+UNTRACKED = 'status-untracked-icon'
+
+getTab = (dirview)->
+  return unless pane = atom.workspace.paneForItem(dirview)
+  i = pane.items.findIndex (x)-> x is dirview
+  return if i < 0
+  bar = pane.element.querySelector('.tab-bar')
+  bar.childNodes[i].firstChild
+
+setTabIconColor = (editor, cls)->
+  return unless tab = getTab(editor)
+  tab?.classList.remove CHANGES, IGNORED, STAGED, UNTRACKED
+  tab.classList.add cls if cls?
+
 writeGitStatus = (editor, status, stats, sortOrder, root)->
   workdir = path.dirname(root)
   dir = editor.getDirectoryPath()
   statuses = git.parseStatus status, path.relative workdir, dir
+  statusValues = Object.values(statuses)
+  summary = statusValues.reduce git.mergeStatus, '  '
+  cls = switch summary
+    when '  ' then break;
+    when '!!'
+      # tricky: when we are inside ignored directory statuses is
+      # {"": "!!"} or like {"some/thing/": "!!"}
+      if statusValues.length is 1
+        k = Object.keys(statuses)[0]
+        IGNORED if k is "" or k.endsWith path.sep
+    when '??' then UNTRACKED
+    else
+      if '?! '.includes(summary[0]) then CHANGES else STAGED
+  setTabIconColor editor, cls
   _stats = Object.entries(stats)
   for name, s of statuses when s[0] is 'D' or s[1] is 'D'
     _stats.push [name]
