@@ -168,6 +168,7 @@ module.exports =
       x.watch.dispose()
     @repositories.clear()
 
+notEmpty = (marker)-> not marker.getBufferRange().isEmpty()
 runCommand = (editor, {directories, repositories, editors, vmp})->
   pack = arguments[1]
   (f)-> (event)->
@@ -175,28 +176,33 @@ runCommand = (editor, {directories, repositories, editors, vmp})->
     dir = directories.get(p)
     repo = repositories.get(dir.gitRoot) if dir.gitRoot
     vimState = vmp.getEditorState(editor)
-    upd = await f Object.assign {event, editor, dir, repo, vimState},
-      fileAtCursor:fileAtCursor(editor)
-      selected:getSelectedEntries(editor, vimState)
+    selectedRows = getSelectedRows(editor, vimState)
+    fileAtCursor = _fileAtCursor(editor)
+    layer = getLayers(editor, ['name'])['name']
+    selected = selectedRows.map (row)->
+      if marker = layer.findMarkers(startBufferRow: row).filter(notEmpty)[0]
+        editor.getTextInBufferRange marker.getBufferRange()
+    selected = _.filter selected
+    upd = await f {event, editor, dir, repo, vimState, selectedRows, selected, fileAtCursor}
     if upd is 'dir'
       checkdir p, pack, "do not create new watch"
 
-fileAtCursor = (editor)->
+_fileAtCursor = (editor)->
   {row} = editor.getCursorBufferPosition()
   return if row < 3
   uri = editor.getDirectoryPath()
   path.normalize path.join uri, getFields(editor, row, ['name'])[0]
 
-getSelectedEntries = (editor, vimstate)->
+getSelectedRows = (editor, vimstate)->
   sels = vimstate?.getPersistentSelectionBufferRanges()
   unless sels?.length
     sels = editor.getSelectedBufferRanges()
   a = new Set
   for {start, end} in sels
     for i in [start.row .. end.row - (end.column is 0)] by 1
-      a.add _.first getFields editor, i, ['name']
-  return Array.from a.values() if a.size
-  getFields(editor, sels[0].start.row, ['name'])
+      a.add i
+  a.add sels[0].start.row if a.size is 0
+  Array.from(a).sort()
 
 checkdir = (p, pack, watch)->
   try
