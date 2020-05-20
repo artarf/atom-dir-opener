@@ -124,7 +124,7 @@ module.exports =
         prev = estate.prevState
         proj = atom.project.getPaths().find (d)-> p.startsWith d
         if estate.stats isnt prev?.stats or p isnt prev?.uri or sortOrder isnt @sortOrder or proj isnt prev?.proj
-          writeStats editor, stats, proj, @sortOrder, updateHistory editor, estate
+          writeStats editor, stats, proj, @sortOrder, estate.uri, updateHistory editor, estate
           estate.prevState = {uri:p, @sortOrder, stats, proj}
         if groot = dirstate.gitRoot
           return if @_timer?
@@ -381,7 +381,7 @@ writeGitSummary = (editor, repo)->
   editor.setTextInBufferRange range, " (#{branch})", bypassReadOnly: true
   editor.buffer.clearUndoStack()
 
-writeStats = (editor, stats, proj, sortOrder, selected)->
+writeStats = (editor, stats, proj, sortOrder, prevUri, selected)->
   items = Object.entries(stats).sort comparers[sortOrder]
   dir = editor.getDirectoryPath()
   x = items.map format.statsRow
@@ -398,6 +398,9 @@ writeStats = (editor, stats, proj, sortOrder, selected)->
   f = (row)-> row.join(' '.repeat colspace) + '\n'
   text = '\n' + dir + '\n\n' + x.map(f).join('')
   clearMarkers(editor)
+  if not selectedRow? and dir is prevUri
+    selectedRow = editor.getCursorBufferPosition().row
+    selectedRow = Math.min selectedRow, 4 + items.length
   editor.setText text, bypassReadOnly: true
   if proj
     mark editor, [[1, 0], [1, proj.length]], 'project'
