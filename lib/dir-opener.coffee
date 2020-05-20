@@ -130,7 +130,8 @@ module.exports =
           return if @_timer?
           if repo = @repositories.get(groot)
             writeGitSummary editor, repo
-            continue unless status = repo.watch.status
+            status = repo.watch.status
+            continue unless status?
             return if @_timer?
             unless getTab(editor)
               @scheduleUpdate()
