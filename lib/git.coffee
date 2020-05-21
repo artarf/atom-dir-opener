@@ -53,11 +53,11 @@ git.status = (dir)-> git 'status', '--porcelain', '--ignored', dir
 git.parseStatus = (stdout, dirpath)->
   dirpath += path.sep if dirpath and not dirpath.endsWith path.sep
   b = ([n,f])-> n.startsWith dirpath
-  c = ([n,f])-> [n.slice(dirpath.length).split(path.sep)[0],f]
+  c = ([n,f])-> [n.slice(dirpath.length).split(path.sep)[0..1],f]
   lines = fp.map toNameAndFlag, fp.filter(nocomment) stdout.split '\n'
   tmp = fp.filter(b) lines
   if tmp.length
-    fp.mapValues(d) fp.groupBy 0, tmp.map(c)
+    fp.mapValues(d) fp.groupBy '0.0', tmp.map(c)
   else if pp = path.dirname dirpath
     # try to derive from parent
     b = ([n,f])-> dirpath.startsWith n
@@ -77,7 +77,11 @@ toNameAndFlag = (x)->
   [stripQuotes(fp.last(xx)), flag(x) + stripQuotes(renamed)]
 d = (x)->
   flags = x.map(fp.last).reduce(git.mergeStatus, '  ')
-  return flags if flags is '!!' or flags is '??'
+  if flags is '!!'
+    return '  ' if x.length > 1
+    [a,b] = x[0][0]
+    return if b then '  ' else '!!'
+  return flags if flags is '??'
   return '??' if flags is '?!' or flags is '!?'
   return flags.replace('!', ' ') if /!/.test flags
   flags
