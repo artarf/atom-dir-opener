@@ -16,13 +16,12 @@ class GitWatch
   constructor: (root, @callback)->
     @root = path.resolve root
     assert isDir(@root)
-    @working = @closed = false
+    @working = false
     @status = @branch = @balance = @hasStaged = @hasChanges = null
     @index = path.join @root, 'index'
     @workdir = path.dirname @root
     setTimeout @check.bind(this)
   send: ->
-    return if @closed
     @sendRequest = null
     # atom GitRepository does not correctly follow changes -> Help it!
     if r = atom?.project.repositories.find (r)=> r.getPath() is @root
@@ -31,7 +30,6 @@ class GitWatch
         r.refreshStatus()
     @callback()
   setProperty: (name, value)->
-    return if @closed
     return if this[name] is value
     this[name] = value
     clearTimeout @sendRequest if @sendRequest?
@@ -42,20 +40,18 @@ class GitWatch
   setBalance: (balance)-> @setProperty 'balance', balance
   setStatus: (status)-> @setProperty 'status', status
   dispose: ->
-    return if @closed
     @watch?.close()
     clearTimeout @sendRequest if @sendRequest?
     @working = @watch = @status = @branch = @balance = @hasStaged = @hasChanges = @sendRequest = null
-    @closed = true
+    @scheduleCheck = @check = @send = ->
     return
   indexChanged: ->
-    return if @working or @closed
+    return if @working
     @watch.close()
     @watch = null
     return @dispose() if not isDir(@root) # root is deleted
     setTimeout @check.bind(this)
   check: ->
-    return if @closed
     if (not isFile @index) or @working
       clearTimeout @checkLock if @checkLock?
       @checkLock = setTimeout @check.bind(this), 10
