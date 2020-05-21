@@ -54,21 +54,21 @@ class GitWatch
     window.cancelAnimationFrame @schedule
     @schedule = window.requestAnimationFrame =>
       return @scheduleCheck() if @working or not fs.existsSync @index
-      @check()
-  check: ->
-    @watch?.close()
-    @working = true
-    promises = []
-    promises.push git.branch(@workdir).then (result)=> @setBranch result.stdout
-    promises.push git.hasStaged(@workdir).then @setHasStaged.bind(this)
-    promises.push git.hasChanges(@workdir).then @setHasChanges.bind(this)
-    promises.push git.remote(@workdir).then (result)=>
-      if result?.stdout?.trim()
-        git.balance(@workdir).then (x)=> @setBalance x.stdout
-    promises.push git.status(@workdir).then (result)=> @setStatus result.stdout
-    await Promise.all(promises)
-    await sleep(10)
-    @working = false
-    @watch = fs.watch @index, @indexChanged.bind this
-    return
+      @watch?.close()
+      @working = true
+      await check(this)
+      await sleep(10)
+      @watch = fs.watch @index, @indexChanged.bind this
+      @working = false
 module.exports = GitWatch
+
+check = (cache)->
+  promises = []
+  promises.push git.branch(cache.workdir).then (result)=> cache.setBranch result.stdout
+  promises.push git.hasStaged(cache.workdir).then cache.setHasStaged.bind(cache)
+  promises.push git.hasChanges(cache.workdir).then cache.setHasChanges.bind(cache)
+  promises.push git.remote(cache.workdir).then (result)=>
+    if result?.stdout?.trim()
+      git.balance(cache.workdir).then (x)=> cache.setBalance x.stdout
+  promises.push git.status(cache.workdir).then (result)-> cache.setStatus result.stdout
+  Promise.all(promises)
