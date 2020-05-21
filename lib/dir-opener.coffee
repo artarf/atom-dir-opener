@@ -176,7 +176,7 @@ runCommand = (editor, {directories, repositories, editors, vmp})->
   pack = arguments[1]
   (f)-> (event)->
     p = path.resolve editor.getDirectoryPath()
-    dir = directories.get(p)
+    return unless dir = directories.get(p)
     repo = repositories.get(dir.gitRoot) if dir.gitRoot
     vimState = vmp.getEditorState(editor)
     selectedRows = getSelectedRows(editor, vimState)
