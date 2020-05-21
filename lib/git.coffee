@@ -76,7 +76,7 @@ toNameAndFlag = (x)->
   renamed = if xx.length is 1 then '' else xx[0]
   [stripQuotes(fp.last(xx)), flag(x) + stripQuotes(renamed)]
 d = (x)->
-  flags = _.map(x, _.last).reduce(git.mergeStatus, '  ')
+  flags = x.map(fp.last).reduce(git.mergeStatus, '  ')
   return flags if flags is '!!' or flags is '??'
   return '??' if flags is '?!' or flags is '!?'
   return flags.replace('!', ' ') if /!/.test flags
