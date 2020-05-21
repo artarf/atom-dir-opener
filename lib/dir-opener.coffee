@@ -215,7 +215,7 @@ checkdir = (p, pack, watch)->
     unless _.isEqualWith stats, dirstate.stats, utils.statsEqual
       dirstate.stats = stats
       if dirstate.gitRoot and repo = pack.repositories.get(dirstate.gitRoot)
-        repo.watch.check()
+        repo.watch.scheduleCheck()
       pack.scheduleUpdate()
     unless watch?
       dirstate.watch = watch = fs.watch p, -> checkdir p, pack, watch

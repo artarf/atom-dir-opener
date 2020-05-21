@@ -10,7 +10,6 @@ swallow = (f)->
 
 sleep = (ms)-> new Promise (resolve)-> setTimeout resolve, ms
 isDir = (p)-> swallow -> fs.statSync(p).isDirectory()
-isFile = (p)-> swallow -> fs.statSync(p).isFile()
 
 class GitWatch
   constructor: (root, @callback)->
@@ -20,7 +19,7 @@ class GitWatch
     @status = @branch = @balance = @hasStaged = @hasChanges = null
     @index = path.join @root, 'index'
     @workdir = path.dirname @root
-    setTimeout @check.bind(this)
+    @scheduleCheck()
   send: ->
     @sendRequest = null
     # atom GitRepository does not correctly follow changes -> Help it!
@@ -50,12 +49,13 @@ class GitWatch
     @watch.close()
     @watch = null
     return @dispose() if not isDir(@root) # root is deleted
-    setTimeout @check.bind(this)
+    @scheduleCheck()
+  scheduleCheck: ->
+    window.cancelAnimationFrame @schedule
+    @schedule = window.requestAnimationFrame =>
+      return @scheduleCheck() if @working or not fs.existsSync @index
+      @check()
   check: ->
-    if (not isFile @index) or @working
-      clearTimeout @checkLock if @checkLock?
-      @checkLock = setTimeout @check.bind(this), 10
-      return
     @watch?.close()
     @working = true
     promises = []
@@ -68,7 +68,6 @@ class GitWatch
     promises.push git.status(@workdir).then (result)=> @setStatus result.stdout
     await Promise.all(promises)
     await sleep(10)
-    @checkLock = null
     @working = false
     @watch = fs.watch @index, @indexChanged.bind this
     return
