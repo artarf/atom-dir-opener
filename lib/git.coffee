@@ -66,10 +66,15 @@ git.parseStatus = (stdout, dirpath)->
 filepart = (statusRow)-> statusRow.slice 3
 flag = (statusRow)-> statusRow.slice 0, 2
 byDir = fp.groupBy (statusRow)-> path.dirname filepart statusRow
+stripQuotes = (str)->
+  return str unless str[0] is '"'
+  str = str.slice 1, -1
+  str.replace /\\"/g, '"'
+
 toNameAndFlag = (x)->
   xx = filepart(x).split ' -> '
   renamed = if xx.length is 1 then '' else xx[0]
-  [fp.last(xx), flag(x) + renamed]
+  [stripQuotes(fp.last(xx)), flag(x) + stripQuotes(renamed)]
 d = (x)->
   flags = _.map(x, _.last).reduce(git.mergeStatus, '  ')
   return flags if flags is '!!' or flags is '??'
