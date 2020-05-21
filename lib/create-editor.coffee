@@ -2,6 +2,7 @@
 
 {TextEditor, TextBuffer} = require 'atom'
 path = require 'path'
+fs = require 'fs'
 
 class DirectoryView extends TextEditor
   constructor: (params)->
@@ -12,6 +13,7 @@ class DirectoryView extends TextEditor
   getDirectoryPath: -> @_uri
   setPath: (uri)->
     return if @_uri is uri = path.resolve uri
+    return unless fs.existsSync(uri)
     @_uri = uri
     @emitter.emit 'did-change-title'
   getTitle: -> path.basename(@getDirectoryPath()) + "/"
