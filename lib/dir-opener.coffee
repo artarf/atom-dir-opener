@@ -110,7 +110,10 @@ module.exports =
     @subscriptions.add atom.project.onDidChangePaths => @scheduleUpdate()
   useVimModePlus: (@vmp)->
   scheduleUpdate: ->
-    @_timer ?= window.requestAnimationFrame =>
+    window.cancelAnimationFrame @_timer
+    @_timer = window.requestAnimationFrame => @update()
+  update: ->
+    if true
       @_timer = null
       for [editor, estate] from @editors
         p = path.resolve editor.getDirectoryPath() # drop trailing /
