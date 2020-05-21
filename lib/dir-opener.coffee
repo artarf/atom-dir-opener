@@ -186,7 +186,11 @@ runCommand = (editor, {directories, repositories, editors, vmp})->
       if marker = layer.findMarkers(startBufferRow: row).filter(notEmpty)[0]
         editor.getTextInBufferRange marker.getBufferRange()
     selected = _.filter selected
-    upd = await f {event, editor, dir, repo, vimState, selectedRows, selected, fileAtCursor}
+    try
+      upd = await f {event, editor, dir, repo, vimState, selectedRows, selected, fileAtCursor}
+    catch e
+      console.log event, dir, repo, fileAtCursor
+      console.error e
     if upd is 'dir'
       checkdir p, pack, "do not create new watch"
 
