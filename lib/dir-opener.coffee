@@ -123,19 +123,16 @@ module.exports =
           @getGitRoot(p)
           checkdir(p, this)
         continue unless stats = dirstate.stats
-        return if @_timer? # abort if new update was triggered while waiting
         prev = estate.prevState
         proj = atom.project.getPaths().find (d)-> p.startsWith d
         if estate.stats isnt prev?.stats or p isnt prev?.uri or sortOrder isnt @sortOrder or proj isnt prev?.proj
           writeStats editor, stats, proj, @sortOrder, estate.uri, updateHistory editor, estate
           estate.prevState = {uri:p, @sortOrder, stats, proj}
         if groot = dirstate.gitRoot
-          return if @_timer?
           if repo = @repositories.get(groot)
             writeGitSummary editor, repo
             status = repo.watch.status
             continue unless status?
-            return if @_timer?
             unless getTab(editor)
               @scheduleUpdate()
               continue
