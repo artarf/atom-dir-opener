@@ -21,13 +21,12 @@ class GitWatch
     @workdir = path.dirname @root
     @scheduleCheck()
   send: ->
-    @sendRequest = null
+    @callback()
     # atom GitRepository does not correctly follow changes -> Help it!
     if r = atom?.project.repositories.find (r)=> r.getPath() is @root
-      setTimeout ->
+        await sleep(10)
         r.refreshIndex()
         r.refreshStatus()
-    @callback()
   setProperty: (name, value)->
     return if this[name] is value
     this[name] = value
