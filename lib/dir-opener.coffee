@@ -102,6 +102,7 @@ module.exports =
             p = e.getDirectoryPath()
             i = paths.findIndex (pp)-> p.startsWith pp
             e.setPath paths[i + (p is paths[i])] ? paths[0]
+            e.element.focus()
             return
           if _path = e?.getPath?()
             # Fool other openers that are extension based
