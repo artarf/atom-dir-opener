@@ -69,5 +69,8 @@ check = (cache)->
   promises.push git.remote(cache.workdir).then (result)=>
     if result?.stdout?.trim()
       git.balance(cache.workdir).then (x)=> cache.setBalance x.stdout
-  promises.push git.status(cache.workdir).then (result)-> cache.setStatus result.stdout
+  promise = git.status(cache.workdir)
+    .then (s)-> cache.setStatus s.stdout
+    .catch (e)-> console.error cache.workdir, e
+  promises.push promise
   Promise.all(promises)
