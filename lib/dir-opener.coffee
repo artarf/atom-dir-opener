@@ -191,6 +191,8 @@ runCommand = (editor, {directories, repositories, editors, vmp})->
       console.error e
     if upd is 'dir'
       checkdir p, pack, "do not create new watch"
+    else if upd is 'force'
+      pack.scheduleUpdate()
 
 _fileAtCursor = (editor)->
   {row} = editor.getCursorBufferPosition()
