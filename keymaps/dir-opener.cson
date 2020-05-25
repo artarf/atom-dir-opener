@@ -27,7 +27,7 @@
   'g i a': 'dir-opener:git-amend'
   'U': 'dir-opener:undo-last-commit'
   'p': 'dir-opener:paste-files'
-  'd': '!unset'
+  'd': 'unset!'
   'd d': 'dir-opener:delete-selected'
   'D D': 'dir-opener:delete-selected-append'
 
@@ -38,6 +38,6 @@
   'K': 'dir-opener:noop'
 
 'atom-text-editor.dir-opener:not(.insert-mode)':
-  'd': '!unset'
+  'd': 'unset!'
   'd d': 'dir-opener:delete-selected'
   'D D': 'dir-opener:delete-selected-append'
