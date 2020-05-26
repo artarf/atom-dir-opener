@@ -2,6 +2,7 @@ path = require 'path'
 fs = require 'fs'
 os = require 'os'
 electron = require 'electron'
+X = require 'execa'
 _ = require 'lodash'
 {getFields} = require './utils'
 git = require './git'
@@ -220,6 +221,28 @@ pasteFiles = ({dir})->
   atom.notifications.addError "Some errors, see console" if errors
   'dir'
 
+execute = ({fileAtCursor, selected, dir})->
+  return unless fileAtCursor
+  fs.access fileAtCursor, fs.constants.X_OK, (e)->
+    return atom.notifications.addError e.message, dismissable: true if e
+    selected = [] if selected.length is 1 and selected[0] is path.basename fileAtCursor
+    try
+      result = await X fileAtCursor, selected, {cwd: dir.directory, timeout:1000}
+    catch result
+    {stdout, stderr, exitCode, command} = result
+    console.error command, 'exited with', exitCode if exitCode
+    pane = atom.workspace.getActivePane()
+    ansiViewer = require './ansi-viewer'
+    if stdout.trim()
+      pane.addItem item = ansiViewer(stdout, "stdout", command)
+      pane.setActiveItem item
+    if stderr.trim()
+      pane.addItem item2 = ansiViewer(stderr, "stderr", command)
+      pane.setActiveItem item2 unless item
+    else if stdout.trim() is ''
+      console.error result.stack if result.stack
+      atom.notifications.addError "See log for errors", dismissable:true
+
 module.exports =
   'dir-opener:open-parent-directory': openParent
   'dir-opener:open-child': openChild
@@ -238,6 +261,7 @@ module.exports =
   'dir-opener:paste-files': pasteFiles
   'dir-opener:delete-selected': deleteSelected(false)
   'dir-opener:delete-selected-append': deleteSelected(true)
+  'dir-opener:execute-file-at-cursor': execute
   'dir-opener:activate-linewise-visual-mode': ({editor})->
     return if editor.getCursorBufferPosition().row < 3
     atom.commands.dispatch editor.element, 'vim-mode-plus:activate-linewise-visual-mode'
