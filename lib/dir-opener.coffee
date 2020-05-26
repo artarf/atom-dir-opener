@@ -4,7 +4,8 @@ fs = require 'fs'
 os = require 'os'
 assert = require 'assert'
 _ = require 'lodash'
-{getLengths, getLayers, getFields, leftpad, rightpad, listFiles} = utils = require './file-utils'
+{getLengths, leftpad, rightpad, listFiles} = utils = require './file-utils'
+{getFields, getLayers, deleteMarkers} = require './atom-utils'
 git = require './git'
 GitWatch = require './git-watch'
 format = require './format'
@@ -345,7 +346,7 @@ writeGitStatusPart = (editor, statuses, layers, chunks, i, p)->
       oldval = editor.getTextInBufferRange range
       if stats? and editor.buffer.lineForRow(row)[0] is ' '
         # row for deleted file must be deleted
-        utils.deleteMarkers(editor, row, fields)
+        deleteMarkers(editor, row, fields)
         editor.setTextInBufferRange [[row, 0],[row + 1, 0]], '', bypassReadOnly: true
       if not stats?
         x = layers.name.findMarkers(startBufferRow: row)[0]

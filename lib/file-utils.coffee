@@ -83,28 +83,6 @@ else if process.platform is 'linux'
     return console.error err.stack if err
     module.exports.users = mapSplitter(data)
 
-mFilter = (m, pred)-> val for val from m.values() when pred(val)
-
-_getLayers = (editor, roles)->
-  mFilter editor.displayLayer.displayMarkerLayersById, (x)-> roles.includes x.bufferMarkerLayer.role
-
-getLayers = (editor, roles)->
-  _.keyBy _getLayers(editor, roles), 'bufferMarkerLayer.role'
-
-notEmpty = (marker)-> not marker.getBufferRange().isEmpty()
-
-getFields = (editor, row, roles)->
-  layers = _.keyBy _getLayers(editor, roles), 'bufferMarkerLayer.role'
-  roles.map (role)->
-    unless x = layers[role]?.findMarkers(startBufferRow: row).filter(notEmpty)[0]
-      return ""
-    editor.getTextInBufferRange x.getBufferRange()
-
-deleteMarkers = (editor, row, roles)->
-  editor.displayLayer.displayMarkerLayersById.forEach (layer)->
-    if roles.includes layer.bufferMarkerLayer.role
-      marker.destroy() for marker in layer.findMarkers(startBufferRow: row)
-
 getLengths = (x)->
   lengths = []
   for row in x
@@ -113,4 +91,4 @@ getLengths = (x)->
   lengths
 
 users = groups = new Map
-module.exports = {deleteMarkers, statsEqual, ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getLengths, getFields, getLayers}
+module.exports = {statsEqual, ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getLengths}

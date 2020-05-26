@@ -4,7 +4,7 @@ os = require 'os'
 electron = require 'electron'
 X = require 'execa'
 _ = require 'lodash'
-{getFields} = require './file-utils'
+{getFields} = require './atom-utils'
 git = require './git'
 commit = require('./git-commit')
 
