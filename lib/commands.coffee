@@ -202,6 +202,7 @@ deleteSelected = (append)-> ({editor, selected, dir, vimState})->
   setTextToRegister vimState, files
   listener = editor.onDidDestroy ->
     listener.dispose()
+    fs.existsSync(tmpdir) and rimraf(tmpdir)
   "dir"
 
 pasteFiles = ({dir})->
