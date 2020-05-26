@@ -42,8 +42,7 @@ plus = (a,b)-> a + b
 
 drimraf = (dir)->
   names = await fs.promises.readdir(dir)
-  files = names.map (name)-> path.join dir, name
-  results = await Promise.all files.map rimraf
+  results = await Promise.all names.map (name)-> rimraf path.join dir, name
   results.reduce plus, 0
 
 copy = (src, tgt)->
