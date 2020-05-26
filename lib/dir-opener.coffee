@@ -348,24 +348,10 @@ writeGitStatusPart = (editor, statuses, layers, chunks, i, p)->
         utils.deleteMarkers(editor, row, fields)
         editor.setTextInBufferRange [[row, 0],[row + 1, 0]], '', bypassReadOnly: true
       if not stats?
-        statusCol = layers.gitstatus.findMarkers(startBufferRow: 3)[0].getBufferRange().start.column
-        nameCol = statusCol + 4
         x = layers.name.findMarkers(startBufferRow: row)[0]
         name = editor.getTextInBufferRange x.getBufferRange()
         if item isnt name
-          modex = layers.mode.findMarkers(startBufferRow: row)[0]
-          modexRange = modex.getBufferRange().translate [1,0]
-          # insert new row
-          text = ' '.repeat(statusCol)
-          text += s + '  '
-          text += item + '\n'
-          statusRange = {start:[row, statusCol], end:[row, statusCol + 2]}
-          nameRange = {start:[row, nameCol], end:[row, nameCol + text.length]}
-          editor.setTextInBufferRange [[row, 0], [row, 0]], text, bypassReadOnly: true
-          modex.setBufferRange modexRange
-          layers.gitstatus.markBufferRange statusRange, exclusive: false, invalidate: 'never'
-          layers.name.markBufferRange nameRange, exclusive: false, invalidate: 'never'
-          row++
+          insertRow(row++, item, statuses, layers, editor)
         else if s isnt oldval
           editor.setTextInBufferRange range, s, bypassReadOnly: true
       else if s isnt oldval
@@ -376,8 +362,28 @@ writeGitStatusPart = (editor, statuses, layers, chunks, i, p)->
         else if ss.length > 2
           r = layers.link.findMarkers(startBufferRow: row)?[0].getBufferRange()
           editor.setTextInBufferRange r, "(was #{ss.slice 2})", bypassReadOnly: true
+    else
+      insertRow(row++, item, statuses, layers, editor)
   editor.buffer.clearUndoStack()
   window.requestAnimationFrame -> writeGitStatusPart(editor, statuses, layers, chunks, i, p)
+
+insertRow = (row, item, statuses, layers, editor)->
+  ss = statuses item
+  s = ss.slice 0, 2
+  statusCol = layers.gitstatus.findMarkers(startBufferRow: 3)[0].getBufferRange().start.column
+  nameCol = statusCol + 4
+  modex = layers.mode.findMarkers(startBufferRow: row)[0]
+  modexRange = modex.getBufferRange().translate [1,0] if modex
+  # insert new row
+  text = ' '.repeat(statusCol)
+  text += s + '  '
+  text += item + '\n'
+  statusRange = {start:[row, statusCol], end:[row, statusCol + 2]}
+  nameRange = {start:[row, nameCol], end:[row, nameCol + text.length]}
+  editor.setTextInBufferRange [[row, 0], [row, 0]], text, bypassReadOnly: true
+  modex.setBufferRange modexRange if modex
+  layers.gitstatus.markBufferRange statusRange, exclusive: false, invalidate: 'never'
+  layers.name.markBufferRange nameRange, exclusive: false, invalidate: 'never'
 
 writeGitSummary = (editor, repo)->
   {hasStaged, hasChanges, balance, branch} = repo.watch
