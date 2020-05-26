@@ -1,4 +1,4 @@
-{ftype, fflags} = utils = require './utils'
+{ftype, fflags} = utils = require './file-utils'
 timeFormat = git = null
 
 statsRow = ([name, stats])->
