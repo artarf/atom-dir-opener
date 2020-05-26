@@ -91,4 +91,4 @@ getLengths = (x)->
   lengths
 
 users = groups = new Map
-module.exports = {statsEqual, ftype, fflags, leftpad, rightpad, getStat, getStats, users, groups, getLengths}
+module.exports = {statsEqual, ftype, fflags, leftpad, rightpad, getStats, users, groups, getLengths}
