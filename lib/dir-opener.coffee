@@ -4,7 +4,7 @@ fs = require 'fs'
 os = require 'os'
 assert = require 'assert'
 _ = require 'lodash'
-{getLengths, leftpad, rightpad, listFiles} = utils = require './file-utils'
+utils = require './file-utils'
 {getFields, getLayers, deleteMarkers} = require './atom-utils'
 git = require './git'
 GitWatch = require './git-watch'
@@ -31,7 +31,7 @@ defaultDir = ->
   p?.path ? os.homedir()
 
 fields = ['mode', 'nlink', 'user', 'group', 'size', 'date', 'gitstatus', 'name', 'link']
-padding = l: leftpad, r: rightpad
+padding = l: utils.leftpad, r: utils.rightpad
 commands = require './commands'
 
 module.exports =
@@ -408,7 +408,7 @@ writeStats = (editor, stats, proj, sortOrder, prevUri, selected)->
   x = items.map format.statsRow
   x.unshift format.statsRow ['../', fs.lstatSync path.dirname dir]
   x.unshift format.statsRow ['./', fs.lstatSync dir]
-  lengths = getLengths(x)
+  lengths = utils.getLengths(x)
   colspace = 2
   for row, i in x
     name = row[row.length - 2]
