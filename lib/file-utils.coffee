@@ -14,14 +14,14 @@ statsEqual = (a, b)->
   a.uid is b.uid and
   a.gid is b.gid
 
-ftype = (stats)->
-  if stats.isBlockDevice() then 'b'
-  else if stats.isCharacterDevice() then 'c'
-  else if stats.isDirectory() then 'd'
-  else if stats.isFIFO() then 'p'
-  else if stats.isSocket() then 's'
-  else if stats.isSymbolicLink() then 'l'
-  else if stats.isFile() then '-'
+ftype = (stat)->
+  if stat.isBlockDevice() then 'b'
+  else if stat.isCharacterDevice() then 'c'
+  else if stat.isDirectory() then 'd'
+  else if stat.isFIFO() then 'p'
+  else if stat.isSocket() then 's'
+  else if stat.isSymbolicLink() then 'l'
+  else if stat.isFile() then '-'
 
 flagset = (n)->
   r = ''
