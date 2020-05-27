@@ -425,7 +425,7 @@ writeStats = (editor, stats, proj, sortOrder, prevUri, selected)->
     mark editor, [[1, 0], [1, proj.length]], 'project'
   selectedRow ?= 4 + (items.length > 0)
   editor.setCursorBufferPosition [selectedRow, 0]
-  editor.element.scrollToTop() if selectedRow <= screenHeight(editor)
+  editor.element.scrollToTop() if selectedRow <= editor.getRowsPerPage() - 1
   editor.buffer.clearUndoStack()
   paintColors editor, _.chunk(x, 300), 3, colspace, editor.getDirectoryPath()
   return
@@ -433,6 +433,3 @@ writeStats = (editor, stats, proj, sortOrder, prevUri, selected)->
 mark = (editor, range, cls)->
   marker = editor.markBufferRange range, invalidate:'never', exclusive: true
   editor.decorateMarker marker, type:'text', class:cls
-
-screenHeight = (editor)->
-  Math.floor editor.element.getHeight() / editor.getLineHeightInPixels()
