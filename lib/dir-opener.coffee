@@ -18,11 +18,9 @@ clearMarkers = (editor)->
   for id, layer of editor.buffer.markerLayers when layer.role isnt 'selections'
     layer.clear()
 
-isDir = (name)-> name.endsWith('/')
-
 comparers =
   name: ([a],[b])-> a.localeCompare b
-  dirThenName: ([a],[b])-> isDir(b) - isDir(a) or a.localeCompare b
+  dirThenName: ([a],[b])-> b.endsWith('/') - a.endsWith('/') or a.localeCompare b
 
 HISTORY_LIMIT = 200
 
