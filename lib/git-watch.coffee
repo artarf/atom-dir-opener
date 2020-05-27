@@ -1,20 +1,15 @@
 fs = require 'fs'
 path = require 'path'
 assert = require 'assert'
+{pointsToDirectorySync} = require './file-utils'
 git = require './git'
 
-swallow = (f)->
-  try
-    f()
-  catch e
-
 sleep = (ms)-> new Promise (resolve)-> setTimeout resolve, ms
-isDir = (p)-> swallow -> fs.statSync(p).isDirectory()
 
 class GitWatch
   constructor: (root, @callback)->
     @root = path.resolve root
-    assert isDir(@root)
+    assert pointsToDirectorySync(@root)
     @working = false
     @status = @branch = @balance = @hasStaged = @hasChanges = null
     @index = path.join @root, 'index'
@@ -47,7 +42,7 @@ class GitWatch
     return if @working
     @watch.close()
     @watch = null
-    return @dispose() if not isDir(@root) # root is deleted
+    return @dispose() if not pointsToDirectorySync(@root) # root is deleted
     @scheduleCheck()
   scheduleCheck: ->
     window.cancelAnimationFrame @schedule

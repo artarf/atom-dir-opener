@@ -35,6 +35,11 @@ fflags = (n)-> flagset(n >> 6) + flagset(n >> 3) + flagset(n)
 leftpad = (s, n, ch=' ')-> ch.repeat(n - s.length) + s
 rightpad = (s, n, ch=' ')-> s + ch.repeat(n - s.length)
 
+pointsToDirectorySync = (p)->
+  try
+    fs.statSync(p).isDirectory()
+  catch e
+
 splitter = (out, sep)->
   out.split('\n').map (row)-> row.split(sep)
 
@@ -91,4 +96,4 @@ getLengths = (x)->
   lengths
 
 users = groups = new Map
-module.exports = {statsEqual, ftype, fflags, leftpad, rightpad, getStats, users, groups, getLengths}
+module.exports = {pointsToDirectorySync, statsEqual, ftype, fflags, leftpad, rightpad, getStats, users, groups, getLengths}

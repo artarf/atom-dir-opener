@@ -62,7 +62,7 @@ module.exports =
         selected = path.resolve uri.slice 0, -3
       uri = path.resolve uri
       try
-        return if not fs.statSync(uri).isDirectory()
+        return if not utils.pointsToDirectorySync(uri)
       catch e
         return
       if editor = atom.workspace.getActivePane().items.find (x)=> @editors.has(x)
@@ -212,7 +212,7 @@ getSelectedRows = (editor, vimstate)->
 
 checkdir = (p, pack, watch)->
   try
-    assert (await fs.promises.stat p).isDirectory()
+    assert utils.pointsToDirectorySync(p)
     dirstate = pack.directories.get(p)
     stats = await utils.getStats(p)
     unless _.isEqualWith stats, dirstate.stats, utils.statsEqual
