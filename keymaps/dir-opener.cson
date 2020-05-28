@@ -31,6 +31,7 @@
   'd d': 'dir-opener:delete-selected'
   'D D': 'dir-opener:delete-selected-append'
   'X': 'dir-opener:execute-file-at-cursor'
+  'E': 'dir-opener:edit'
 
   # disable some vim-mode-plus keybindings
   'c': 'dir-opener:noop'

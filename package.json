@@ -24,7 +24,8 @@
     "atom-package-deps": "^5.1.0",
     "execa": "^4.0.0",
     "lodash": "^4.17.15",
-    "speed-date": "^1.0.0"
+    "speed-date": "^1.0.0",
+    "valid-filename": "^3.1.0"
   },
   "atomTranspilers": [
     {
