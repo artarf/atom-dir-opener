@@ -7,7 +7,7 @@
   "repository": "https://github.com/atom/dir-opener",
   "license": "MIT",
   "engines": {
-    "atom": ">=1.0.0 <2.0.0"
+    "atom": ">=1.47.0 <2.0.0"
   },
   "package-deps": [
     "vim-mode-plus"

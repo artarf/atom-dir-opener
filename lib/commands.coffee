@@ -25,12 +25,6 @@ uniqueName = (dir, name)->
   for i in [start..999999] by 1 when name + '_' + i not of m
     return path.join dir, name + '_' + i
 
-mkdirp = (p)->
-  return Promise.resolve() if fs.existsSync(p)
-  ret = mkdirp path.dirname p
-  fs.promises.mkdir p
-  ret ? p
-
 rimraf = (src)->
   stat = await fs.promises.lstat(src)
   if stat.isDirectory()
@@ -56,7 +50,7 @@ copy = (src, tgt)->
 
 dircopy = (src, tgt)->
   names = await fs.promises.readdir(src)
-  await mkdirp(tgt)
+  await fs.promises.mkdir tgt, recursive:true
   results = await Promise.all names.map (name)->
     copy path.join(src, name), path.join(tgt, name)
   results.reduce plus, 0
