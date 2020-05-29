@@ -244,10 +244,11 @@ updateHistory = (editor, state)->
     # only updating changed file system => keep current selected item
     selected
   else
-    # dir changed => get selected from history and add current to history
+    # Keep history within reason
     if history.length > 2 * HISTORY_LIMIT
       history = history.slice -(HISTORY_LIMIT)
 
+    # dir changed => get selected from history and add current to history
     selected = path.join state.uri, selected if row > 0
     selected ?= state.uri
     history.push selected if selected and _.last(history) isnt selected
