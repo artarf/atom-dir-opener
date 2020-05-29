@@ -5,7 +5,7 @@ electron = require 'electron'
 X = require 'execa'
 _ = require 'lodash'
 futils = require './file-utils'
-{getFields} = require './atom-utils'
+{getLayers, getFields} = require './atom-utils'
 git = require './git'
 commit = require('./git-commit')
 
@@ -216,6 +216,29 @@ pasteFiles = ({dir})->
   atom.notifications.addError "Some errors, see console" if errors
   'dir'
 
+visited = (backwards)-> ({editor, fileAtCursor, selected, dir, history})->
+  backwards = Boolean backwards
+  {row} = editor.getCursorBufferPosition()
+  x = history.filter (p)-> p.startsWith(dir.directory)
+  x = x.map (p)-> path.relative dir.directory, p
+  x = new Set _.filter x.map (p)-> p.split(path.sep)[0]
+  layer = getLayers(editor, ['name'])['name']
+  ranges = layer.getMarkers().map (y)-> y.getBufferRange()
+  ranges = _.sortBy ranges, ["start.row"]
+  i = ranges.findIndex (r)-> r.start.row is row
+  ranges = ranges.slice(i+1).concat ranges.slice(0,i)
+  ranges.reverse() if backwards
+  if x.size < 2
+    rotateDown editor, 1 - (2 * Boolean backwards)
+    return
+  x.delete path.basename fileAtCursor
+  for r,i in ranges
+    name = editor.getTextInBufferRange(r).replace path.sep, ''
+    if x.has name
+      editor.setCursorBufferPosition [r.start.row, 0]
+      return
+  rotateDown editor, 1 - (2 * Boolean backwards)
+
 execute = ({fileAtCursor, selected, dir})->
   return unless fileAtCursor
   fs.access fileAtCursor, fs.constants.X_OK, (e)->
@@ -259,6 +282,8 @@ module.exports =
   'dir-opener:delete-selected': deleteSelected(false)
   'dir-opener:delete-selected-append': deleteSelected(true)
   'dir-opener:execute-file-at-cursor': execute
+  'dir-opener:next-visited': visited()
+  'dir-opener:previos-visited': visited(true)
   'dir-opener:edit': ({editor, dir})->
     {directory} = dir
     editor.setReadOnly false

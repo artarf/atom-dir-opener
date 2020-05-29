@@ -32,12 +32,12 @@
   'D D': 'dir-opener:delete-selected-append'
   'X': 'dir-opener:execute-file-at-cursor'
   'E': 'dir-opener:edit'
+  'J': 'dir-opener:next-visited'
+  'K': 'dir-opener:previos-visited'
 
   # disable some vim-mode-plus keybindings
   'c': 'dir-opener:noop'
   'i': 'dir-opener:noop'
-  'J': 'dir-opener:noop'
-  'K': 'dir-opener:noop'
 
 'atom-text-editor.dir-opener:not(.insert-mode)':
   'd': 'unset!'

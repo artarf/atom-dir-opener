@@ -172,6 +172,7 @@ notEmpty = (marker)-> not marker.getBufferRange().isEmpty()
 runCommand = (editor, {directories, repositories, editors, vmp})->
   pack = arguments[1]
   (f)-> (event)->
+    {history} = pack.editors.get(editor)
     p = path.resolve editor.getDirectoryPath()
     return unless dir = directories.get(p)
     repo = repositories.get(dir.gitRoot) if dir.gitRoot
@@ -184,7 +185,7 @@ runCommand = (editor, {directories, repositories, editors, vmp})->
         editor.getTextInBufferRange marker.getBufferRange()
     selected = _.filter selected
     try
-      upd = await f {event, editor, dir, repo, vimState, selectedRows, selected, fileAtCursor}
+      upd = await f {event, editor, dir, repo, vimState, selectedRows, selected, fileAtCursor, history}
     catch e
       console.log event, dir, repo, fileAtCursor
       console.error e
