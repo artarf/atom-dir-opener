@@ -104,19 +104,19 @@ ToggleInProject = ({editor})->
     atom.project.removePath pp
   else atom.project.addPath ep
 
-moveDown = (editor)->
+rotateUp = (editor, amt = 1)-> rotateDown editor, -amt
+rotateDown = (editor, amt = 1)->
   lrow = editor.getLastBufferRow()
   lrow-- if editor.lineTextForBufferRow(lrow) is ""
-  pos = editor.getCursorBufferPosition()
-  if pos.row is lrow
-    editor.setCursorBufferPosition row:5, column: pos.column if lrow > 5
-  else
-    editor.moveDown(1)
+  {row, column} = editor.getCursorBufferPosition()
+  row += amt
+  row = if row > lrow then 5 else if row < 5 then lrow else row
+  editor.setCursorBufferPosition {row, column}
 
 toggleRow = ({editor, vimState})->
   return unless vimState
   {row} = editor.getCursorBufferPosition()
-  return moveDown(editor) if row < 5
+  return rotateDown(editor) if row < 5
   {buffer} = editor
   range = buffer.clipRange [[row, 0], [row+1, 0]]
   x = vimState.persistentSelection.getMarkers().filter (m)-> m.getBufferRange().intersectsWith range, true
@@ -133,7 +133,7 @@ toggleRow = ({editor, vimState})->
       marker.setBufferRange buffer.clipRange [r.end, range.end]
   unless x.length
     vimState.persistentSelection.markBufferRange range
-  moveDown(editor)
+  rotateDown(editor)
 
 clearSelections = (editor, vimState)->
   vimState?.clearPersistentSelections()
