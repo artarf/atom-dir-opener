@@ -38,6 +38,7 @@ module.exports =
   directories: new Map
   repositories: new Map
   sortOrder: "dirThenName"
+  commonHistory: []
 
   activate: ->
     await require('atom-package-deps').install('dir-opener')
@@ -80,9 +81,15 @@ module.exports =
         subscriptions.add editor.onDidChangeTitle => @scheduleUpdate()
         subscriptions.add editor.onDidDestroy =>
           subscriptions.dispose()
+          @commonHistory.push @editors.get(editor).history...
+          # Keep history within reason
+          if @commonHistory.length > 2 * HISTORY_LIMIT
+            @commonHistory[i] = item for item, i in @commonHistory.slice -(HISTORY_LIMIT)
+            @commonHistory.length = HISTORY_LIMIT
           @editors.delete editor
         @scheduleUpdate()
-        history = [selected] if selected?
+        history = @commonHistory.slice()
+        history.push selected if selected?
         @editors.set editor, {subscriptions, history}
       editor
     if atom.textEditors.editors.size is 0
@@ -167,6 +174,7 @@ module.exports =
     for [root, x] from @repositories
       x.watch.dispose()
     @repositories.clear()
+    @commonHistory = []
 
 notEmpty = (marker)-> not marker.getBufferRange().isEmpty()
 runCommand = (editor, {directories, repositories, editors, vmp})->
@@ -244,10 +252,6 @@ updateHistory = (editor, state)->
     # only updating changed file system => keep current selected item
     selected
   else
-    # Keep history within reason
-    if history.length > 2 * HISTORY_LIMIT
-      history = history.slice -(HISTORY_LIMIT)
-
     # dir changed => get selected from history and add current to history
     selected = path.join state.uri, selected if row > 0
     selected ?= state.uri
