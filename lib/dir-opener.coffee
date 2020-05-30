@@ -230,7 +230,10 @@ checkdir = (p, pack, watch)->
         repo.watch.scheduleCheck()
       pack.scheduleUpdate()
     unless watch?
-      dirstate.watch = watch = fs.watch p, -> checkdir p, pack, watch
+      if await utils.isAsar p
+        dirstate.watch = close: ->
+      else
+        dirstate.watch = watch = fs.watch p, -> checkdir p, pack, watch
   catch e
     watch?.close?()
     pack.directories.delete p

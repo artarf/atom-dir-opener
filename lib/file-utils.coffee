@@ -95,5 +95,9 @@ getLengths = (x)->
       lengths[i] = Math.max cell.length, lengths[i] ? 0
   lengths
 
+isAsar = (p)->
+  stat = await fs.promises.lstat(p)
+  stat.blksize is undefined and stat.dev is 1
+
 users = groups = new Map
-module.exports = {pointsToDirectorySync, statsEqual, ftype, fflags, leftpad, rightpad, getStats, users, groups, getLengths}
+module.exports = {pointsToDirectorySync, statsEqual, ftype, fflags, leftpad, rightpad, getStats, users, groups, getLengths, isAsar}
