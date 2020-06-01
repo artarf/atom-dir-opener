@@ -96,7 +96,7 @@ module.exports =
       if dir = atom.project.rootDirectories[0]
         atom.workspace.open PREFIX + dir.path + '/'
 
-    @subscriptions.add atom.commands.add 'atom-workspace',
+    @subscriptions.add atom.commands.add 'body',
       'dir-opener:open-directory': =>
         if e = atom.workspace.getActivePaneItem()
           if @editors.has(e)

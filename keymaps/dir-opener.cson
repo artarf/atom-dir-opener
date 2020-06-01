@@ -7,7 +7,7 @@
 
 # For more detailed documentation see
 # https://atom.io/docs/latest/behind-atom-keymaps-in-depth
-'atom-workspace':
+'body':
   'cmd-|': 'dir-opener:open-directory'
 'atom-text-editor.dir-opener':
   'h': 'dir-opener:open-parent-directory'
