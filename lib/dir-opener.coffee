@@ -236,6 +236,7 @@ checkdir = (p, pack, watch)->
         dirstate.watch = close: ->
       else
         dirstate.watch = watch = fs.watch p, -> checkdir p, pack, watch
+    fs.unlink(path.join(p, '.DS_Store'), ->) if '.DS_Store' of stats
   catch e
     watch?.close?()
     pack.directories.delete p
