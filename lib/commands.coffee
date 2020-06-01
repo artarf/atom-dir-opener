@@ -385,20 +385,15 @@ ops = {
     return prot(null, null, null, 'file-format') if current[0] isnt mode[0]
     current = current.slice 1
     mode = mode.slice 1
-    for ch, i in "rwxrwxrwx"
-      unless mode[i] is '-' or mode[i] is ch
-        errors.push "invalid mode #{mode} (file #{file})"
-        break
-    unless errors.length
-      _mode = 0
-      for rights,i in _.chunk(mode, 3)
-        for flag,j in rights
-          _mode |= (1 << (2 - j)) << (3 * (2 - i)) if flag isnt '-'
+    if err = futils.validateMode(mode)
+      errors.push err
+    else
+      _mode = futils.parseMode mode
       oper = ->
         fs.promises.lchmod path.join(directory, file), _mode
       operations.push ["- chmod #{_mode.toString(8)} #{file}", oper]
   user: (current, owner, file, directory, field, errors, operations)->
-    if uid = getId futils.users, owner
+    if uid = futils.getUid owner
       p = path.join(directory, file)
       oper = ->
         stat = await fs.promises.lstat(p)
@@ -407,7 +402,7 @@ ops = {
     else
       errors.push "#{owner} is not a valid user"
   group: (current, group, file, directory, field, errors, operations)->
-    if gid = getId futils.groups, group
+    if gid = futils.getGid group
       p = path.join(directory, file)
       oper = ->
         stat = await fs.promises.lstat(p)
@@ -426,9 +421,3 @@ ops = {
     else
       errors.push "#{name} is not a valid file name"
 }
-
-keyForValue = (m, val)-> return k for [k,v] from m when v is val
-
-getId = (m, val)->
-  id = parseInt(val)
-  if isNaN(id) then keyForValue(m, val) else m.has(id) and id

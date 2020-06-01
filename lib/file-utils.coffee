@@ -99,5 +99,30 @@ isAsar = (p)->
   stat = await fs.promises.lstat(p)
   stat.blksize is undefined and stat.dev is 1
 
+keyForValue = (m, val)-> return k for [k,v] from m when v is val
+
+getId = (m, val)->
+  id = parseInt(val)
+  if isNaN(id) then keyForValue(m, val) else (if m.has(id) then id)
+getName = (m, str)-> if id = getId(m, str) then m.get(id) else String str
+
+getUid = (val)-> getId(module.exports.users, val)
+getGid = (val)-> getId(module.exports.groups, val)
+getUser = (str)-> getName module.exports.users, str
+getGroup = (str)-> getName module.exports.groups, str
+
+validateMode = (mode)->
+  for ch, i in "rwxrwxrwx"
+    unless mode[i] is '-' or mode[i] is ch
+      return "invalid mode #{mode} (file #{file})"
+
+parseMode = (mode)->
+  ret = 0
+  for rights,i in _.chunk(mode, 3)
+    for flag,j in rights
+      ret |= (1 << (2 - j)) << (3 * (2 - i)) if flag isnt '-'
+  ret
+
 users = groups = new Map
-module.exports = {pointsToDirectorySync, statsEqual, ftype, fflags, leftpad, rightpad, getStats, users, groups, getLengths, isAsar}
+module.exports = {pointsToDirectorySync, statsEqual, ftype, fflags, leftpad, rightpad, getStats, getUid,
+                  getGid, getUser, getGroup, getLengths, isAsar, validateMode, parseMode}

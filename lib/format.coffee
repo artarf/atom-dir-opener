@@ -10,8 +10,8 @@ statsRow = ([name, stats])->
   [
     utils.ftype(stats) + utils.fflags(stats.mode)
     String stats.nlink
-    utils.users.get(stats.uid) ? String stats.uid
-    utils.groups.get(stats.gid) ? String stats.gid
+    utils.getUser(stats.uid)
+    utils.getGroup(stats.gid)
     String stats.size
     time
     '  '
