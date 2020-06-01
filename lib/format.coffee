@@ -1,4 +1,4 @@
-{ftype, fflags} = utils = require './file-utils'
+utils = require './file-utils'
 timeFormat = git = null
 
 statsRow = ([name, stats])->
@@ -8,7 +8,7 @@ statsRow = ([name, stats])->
   [name, link] = name.split '//'
   time = timeFormat(stats.mtime)
   [
-    ftype(stats) + fflags(stats.mode)
+    utils.ftype(stats) + utils.fflags(stats.mode)
     String stats.nlink
     utils.users.get(stats.uid) ? String stats.uid
     utils.groups.get(stats.gid) ? String stats.gid
