@@ -9,6 +9,7 @@ utils = require './file-utils'
 git = require './git'
 GitWatch = require './git-watch'
 format = require './format'
+asarOpener = require './asar-opener'
 PREFIX = 'dir-opener:/'
 
 sleep = (ms)-> new Promise (resolve)-> setTimeout resolve, ms
@@ -56,6 +57,7 @@ module.exports =
       return unless e.constructor.name is 'DirectoryView'
       if tab = getTab(e)
         tab.classList.add('icon','icon-file-directory')
+    @subscriptions.add atom.workspace.addOpener asarOpener
     @subscriptions.add atom.workspace.addOpener (uri)=>
       uri = uri.slice PREFIX.length if uri.startsWith PREFIX
       uri = uri.replace '~', os.homedir()

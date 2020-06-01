@@ -147,6 +147,10 @@ openChild = ({editor, fileAtCursor})->
   return if row < 4
   if fileAtCursor.endsWith path.sep
     editor.setPath fileAtCursor
+  else if await futils.isAsar fileAtCursor
+    # funny string at the end is to deceive image viewer opener, which
+    # depends on the extension only.
+    atom.workspace.open 'asar://' + fileAtCursor + '//..'
   else
     if editor isnt await atom.workspace.open fileAtCursor
       atom.workspace.paneForItem(editor)?.destroyItem(editor)
