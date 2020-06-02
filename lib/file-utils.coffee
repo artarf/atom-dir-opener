@@ -111,7 +111,7 @@ getGid = (val)-> getId(module.exports.groups, val)
 getUser = (str)-> getName module.exports.users, str
 getGroup = (str)-> getName module.exports.groups, str
 
-validateMode = (mode)->
+validateMode = (mode, file)->
   for ch, i in "rwxrwxrwx"
     unless mode[i] is '-' or mode[i] is ch
       return "invalid mode #{mode} (file #{file})"

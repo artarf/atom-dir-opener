@@ -106,9 +106,9 @@ operate = (operations)->
   true
 
 validate = {
-  mode: (mode, _, current)->
+  mode: (mode, _, current, file)->
     return "field file-format is protected" if current[0] isnt mode[0]
-    futils.validateMode(mode.slice 1)
+    futils.validateMode mode.slice(1), file
   user: (user)-> if not futils.getUid(user) then "#{owner} is not a valid user"
   group: (group)-> if not futils.getGid(group) then "#{group} is not a valid group"
   name: (name, directory, current)->
