@@ -111,8 +111,8 @@ validate = {
     futils.validateMode(mode.slice 1)
   user: (user)-> if not futils.getUid(user) then "#{owner} is not a valid user"
   group: (group)-> if not futils.getGid(group) then "#{group} is not a valid group"
-  name: (name, directory)->
-    if fs.existsSync path.join(directory, name)
+  name: (name, directory, current)->
+    if fs.existsSync path.join(directory, name) and name.toLowerCase() isnt current.toLowerCase()
       "#{name} already exists"
     else if not valid(name)
       "#{name} is not a valid file name"
