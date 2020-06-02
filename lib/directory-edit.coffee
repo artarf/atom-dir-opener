@@ -1,6 +1,7 @@
 path = require 'path'
 fs = require 'fs'
 _ = require 'lodash'
+valid = require 'valid-filename'
 futils = require './file-utils'
 
 module.exports = ({editor, dir})->
@@ -124,7 +125,6 @@ ops = {
     else
       errors.push "#{group} is not a valid group"
   name: (current, name, file, directory, field, errors, operations)->
-    valid = require 'valid-filename'
     newname = path.join(directory, name)
     if fs.existsSync newname
       errors.push "#{name} already exists"
