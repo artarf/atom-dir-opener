@@ -12,14 +12,7 @@ module.exports = ({editor, dir})->
   origText = editor.getText()
   layers = Array.from editor.displayLayer.displayMarkerLayersById.values()
   layers = _.keyBy layers, 'bufferMarkerLayer.role'
-  ks = ['mode', 'user', 'group', 'name']
-  origCols = {}
-  for k in ks
-    origCols[k] = x = []
-    for m in layers[k].getMarkers()
-      r = m.getBufferRange()
-      if not r.isEmpty()
-        x[r.start.row] = [r.start.column, r.end.column]
+  origCols = getRanges(layers)
   # move cursor to start of file name of current row
   namecol = origCols.name[3][0]
   {row} = editor.getCursorBufferPosition()
@@ -46,25 +39,26 @@ module.exports = ({editor, dir})->
         colspace = 2
         operations = []
         errors = []
-        fields = ['mode', 'nlink', 'user', 'group', 'size', 'date', 'gitstatus', 'name', 'link']
-        prot = (a,b,c,fieldname)->
-          errors.push "field #{fieldname} is protected"
         for origline,i in origText.split('\n') when origline isnt lines[i]
           if i < 5
             atom.notifications.addError 'You may not change header lines', dismissable:true
             return
           filename = origline.slice origCols.name[i]...
-          for k in ks
+          for k in Object.keys(origCols)
             if x = layers[k].findMarkers(startBufferRow: i).filter(notEmpty)[0]
               edited = editor.getTextInBufferRange x.getBufferRange()
               current = origline.slice origCols[k][i]...
               if current isnt edited
-                fn = ops[k]
-                fn current, edited, filename, directory, k, errors, operations
+                if err = validate[k](edited, directory, current)
+                  errors.push err
+                else if errors.length is 0
+                  operations.push [ops[k], edited]
         if errors.length
           atom.notifications.addError 'errors detected', detail:errors.join('\n'), dismissable:true
           return
         if operations.length
+          operations = operations.map ([fn, edited])->
+            fn edited, filename, directory
           # "https://electronjs.org/docs/api/dialog#dialogshowmessageboxbrowserwindow-options"
           message = "Do you want to execute these operations?"
           detail = operations.map(_.first).join('\n')
@@ -94,43 +88,52 @@ operate = (operations)->
       return false
   true
 
-ops = {
-  mode: (current, mode, file, directory, field, errors, operations)->
-    return prot(null, null, null, 'file-format') if current[0] isnt mode[0]
-    current = current.slice 1
-    mode = mode.slice 1
-    if err = futils.validateMode(mode)
-      errors.push err
-    else
-      _mode = futils.parseMode mode
-      oper = ->
-        fs.promises.lchmod path.join(directory, file), _mode
-      operations.push ["- chmod #{_mode.toString(8)} #{file}", oper]
-  user: (current, owner, file, directory, field, errors, operations)->
-    if uid = futils.getUid owner
-      p = path.join(directory, file)
-      oper = ->
-        stat = await fs.promises.lstat(p)
-        return await fs.promises.chown path.join(directory, file), uid, stat.gid
-      operations.push ["- chown #{owner} #{file}", oper]
-    else
-      errors.push "#{owner} is not a valid user"
-  group: (current, group, file, directory, field, errors, operations)->
-    if gid = futils.getGid group
-      p = path.join(directory, file)
-      oper = ->
-        stat = await fs.promises.lstat(p)
-        return await fs.promises.chown p, stat.uid, gid
-      operations.push ["- chgrp #{group} #{file}", oper]
-    else
-      errors.push "#{group} is not a valid group"
-  name: (current, name, file, directory, field, errors, operations)->
-    newname = path.join(directory, name)
-    if fs.existsSync newname
-      errors.push "#{name} already exists"
-    else if valid(name)
-      oper = -> fs.promises.rename path.join(directory, file), newname
-      operations.push ["- mv #{file} #{name}", oper]
-    else
-      errors.push "#{name} is not a valid file name"
+validate = {
+  mode: (mode, _, current)->
+    return "field file-format is protected" if current[0] isnt mode[0]
+    futils.validateMode(mode.slice 1)
+  user: (user)-> if not futils.getUid(user) then "#{owner} is not a valid user"
+  group: (group)-> if not futils.getGid(group) then "#{group} is not a valid group"
+  name: (name, directory)->
+    if fs.existsSync path.join(directory, name)
+      "#{name} already exists"
+    else if not valid(name)
+      "#{name} is not a valid file name"
 }
+
+ops = {
+  mode: (mode, file, directory)->
+    mode = futils.parseMode mode.slice 1
+    [
+      "- chmod #{mode.toString(8)} #{file}"
+      -> fs.promises.lchmod path.join(directory, file), mode
+    ]
+  user: (owner, file, directory)->
+    uid = futils.getUid owner
+    p = path.join(directory, file)
+    oper = ->
+      stat = await fs.promises.lstat(p)
+      return await fs.promises.chown p, uid, stat.gid
+    ["- chown #{owner} #{file}", oper]
+  group: (group, file, directory)->
+    gid = futils.getGid group
+    p = path.join(directory, file)
+    oper = ->
+      stat = await fs.promises.lstat(p)
+      return await fs.promises.chown p, stat.uid, gid
+    ["- chgrp #{group} #{file}", oper]
+  name: (name, file, directory)-> [
+      "- mv #{file} #{name}"
+      -> fs.promises.rename path.join(directory, file), path.join(directory, name)
+    ]
+}
+
+getRanges = (layers)->
+  origCols = {}
+  for k in ['mode', 'user', 'group', 'name']
+    origCols[k] = x = []
+    for m in layers[k].getMarkers()
+      r = m.getBufferRange()
+      if not r.isEmpty()
+        x[r.start.row] = [r.start.column, r.end.column]
+  origCols
