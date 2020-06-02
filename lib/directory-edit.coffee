@@ -69,18 +69,27 @@ module.exports = ({editor, dir, vimState})->
     cp = editor.createCheckpoint()
     illegalEdit = (msg)->
       atom.notifications.addWarning "Illegal edit", detail:msg, dismissable:true
+      _cp = cp # nextNormalMode may change cp
       vimState.activate "normal"
-      editor.revertToCheckpoint(cp)
+      editor.revertToCheckpoint(_cp)
+      cp = _cp
     _commands.add editor.onDidStopChanging ({changes})->
       if changes.some (c)-> c.oldRange.start.row < 5
         if origHeader isnt editor.getTextInBufferRange headerRange
           return illegalEdit "Header may not be changed."
       if lc isnt editor.getLineCount()
         return illegalEdit "Don't add or delete lines"
-      cp = editor.createCheckpoint()
+      nextNormalMode vimState, -> cp = editor.createCheckpoint()
     _commands.add editor.onDidDestroy ->
       _commands.dispose()
       resolve("force")
+
+nextNormalMode = (vimState, fn)->
+  return fn() if vimState.mode is 'normal'
+  once = vimState.onDidActivateMode ({mode})->
+    return unless mode is 'normal'
+    once.dispose()
+    fn()
 
 notEmpty = (marker)-> not marker.getBufferRange().isEmpty()
 
