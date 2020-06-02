@@ -4,12 +4,14 @@ _ = require 'lodash'
 valid = require 'valid-filename'
 futils = require './file-utils'
 
-module.exports = ({editor, dir})->
+module.exports = ({editor, dir, vimState})->
   {directory} = dir
   editor.setReadOnly false
   editor.element.classList.remove 'dir-opener'
   editor.element.classList.add 'dir-opener-edit'
   origText = editor.getText()
+  headerRange = [[0,0],[5,0]]
+  origHeader = editor.getTextInBufferRange headerRange
   layers = Array.from editor.displayLayer.displayMarkerLayersById.values()
   layers = _.keyBy layers, 'bufferMarkerLayer.role'
   origCols = getRanges(layers)
@@ -32,17 +34,11 @@ module.exports = ({editor, dir})->
       'core:save': (ev)->
         ev.stopImmediatePropagation()
         return stop() if origText is text = editor.getText()
-        if lc isnt editor.getLineCount()
-          atom.notifications.addWarning "Don't add or delete lines"
-          return
         lines = editor.buffer.getLines()
         colspace = 2
         operations = []
         errors = []
         for origline,i in origText.split('\n') when origline isnt lines[i]
-          if i < 5
-            atom.notifications.addError 'You may not change header lines', dismissable:true
-            return
           filename = origline.slice origCols.name[i]...
           for k in Object.keys(origCols)
             if x = layers[k].findMarkers(startBufferRow: i).filter(notEmpty)[0]
@@ -52,12 +48,12 @@ module.exports = ({editor, dir})->
                 if err = validate[k](edited, directory, current)
                   errors.push err
                 else if errors.length is 0
-                  operations.push [ops[k], edited]
+                  operations.push [ops[k], edited, filename]
         if errors.length
           atom.notifications.addError 'errors detected', detail:errors.join('\n'), dismissable:true
           return
         if operations.length
-          operations = operations.map ([fn, edited])->
+          operations = operations.map ([fn, edited, filename])->
             fn edited, filename, directory
           # "https://electronjs.org/docs/api/dialog#dialogshowmessageboxbrowserwindow-options"
           message = "Do you want to execute these operations?"
@@ -70,6 +66,18 @@ module.exports = ({editor, dir})->
         else
           console.log "This should not happen"
           stop()
+    cp = editor.createCheckpoint()
+    illegalEdit = (msg)->
+      atom.notifications.addWarning "Illegal edit", detail:msg, dismissable:true
+      vimState.activate "normal"
+      editor.revertToCheckpoint(cp)
+    _commands.add editor.onDidStopChanging ({changes})->
+      if changes.some (c)-> c.oldRange.start.row < 5
+        if origHeader isnt editor.getTextInBufferRange headerRange
+          return illegalEdit "Header may not be changed."
+      if lc isnt editor.getLineCount()
+        return illegalEdit "Don't add or delete lines"
+      cp = editor.createCheckpoint()
     _commands.add editor.onDidDestroy ->
       _commands.dispose()
       resolve("force")
