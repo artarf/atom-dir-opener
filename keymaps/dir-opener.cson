@@ -32,6 +32,7 @@
   'D D': 'dir-opener:delete-selected-append'
   'X': 'dir-opener:execute-file-at-cursor'
   'E': 'dir-opener:edit'
+  'I': 'dir-opener:insert'
   'J': 'dir-opener:next-visited'
   'K': 'dir-opener:previos-visited'
 

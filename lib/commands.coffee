@@ -287,6 +287,7 @@ module.exports =
   'dir-opener:next-visited': visited()
   'dir-opener:previos-visited': visited(true)
   'dir-opener:edit': require './directory-edit'
+  'dir-opener:insert': require './insert'
   'dir-opener:activate-linewise-visual-mode': ({editor})->
     return if editor.getCursorBufferPosition().row < 3
     atom.commands.dispatch editor.element, 'vim-mode-plus:activate-linewise-visual-mode'
