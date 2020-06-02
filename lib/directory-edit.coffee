@@ -6,9 +6,6 @@ futils = require './file-utils'
 
 module.exports = ({editor, dir, vimState})->
   {directory} = dir
-  editor.setReadOnly false
-  editor.element.classList.remove 'dir-opener'
-  editor.element.classList.add 'dir-opener-edit'
   origText = editor.getText()
   headerRange = [[0,0],[5,0]]
   origHeader = editor.getTextInBufferRange headerRange
@@ -20,20 +17,7 @@ module.exports = ({editor, dir, vimState})->
   {row} = editor.getCursorBufferPosition()
   editor.setCursorBufferPosition [row, namecol]
   lc = editor.getLineCount()
-  new Promise (resolve)->
-    stop = ->
-      _commands.dispose()
-      editor.setReadOnly true
-      editor.element.classList.add 'dir-opener'
-      editor.element.classList.remove 'dir-opener-edit'
-      resolve("force")
-    _commands = atom.commands.add editor.element,
-      'core:close': (ev)->
-        ev.stopImmediatePropagation()
-        stop()
-      'core:save': (ev)->
-        ev.stopImmediatePropagation()
-        return stop() if origText is text = editor.getText()
+  save = ->
         lines = editor.buffer.getLines()
         colspace = 2
         operations = []
@@ -45,13 +29,13 @@ module.exports = ({editor, dir, vimState})->
               edited = editor.getTextInBufferRange x.getBufferRange()
               current = origline.slice origCols[k][i]...
               if current isnt edited
-                if err = validate[k](edited, directory, current)
+                if err = validate[k](edited, directory, current, filename)
                   errors.push err
                 else if errors.length is 0
                   operations.push [ops[k], edited, filename]
         if errors.length
           atom.notifications.addError 'errors detected', detail:errors.join('\n'), dismissable:true
-          return
+          return false
         if operations.length
           operations = operations.map ([fn, edited, filename])->
             fn edited, filename, directory
@@ -59,37 +43,20 @@ module.exports = ({editor, dir, vimState})->
           message = "Do you want to execute these operations?"
           detail = operations.map(_.first).join('\n')
           buttons = ["Ok", "Cancel"]
-          atom.confirm {type:"question", message, buttons, detail}, (cancel)->
-            return if cancel
-            if await operate operations
-              stop()
+          new Promise (resolve)->
+            atom.confirm {type:"question", message, buttons, detail}, (cancel)->
+              resolve false if cancel
+              resolve await operate operations
         else
           console.log "This should not happen"
-          stop()
-    cp = editor.createCheckpoint()
-    illegalEdit = (msg)->
-      atom.notifications.addWarning "Illegal edit", detail:msg, dismissable:true
-      _cp = cp # nextNormalMode may change cp
-      vimState.activate "normal"
-      editor.revertToCheckpoint(_cp)
-      cp = _cp
-    _commands.add editor.onDidStopChanging ({changes})->
-      if changes.some (c)-> c.oldRange.start.row < 5
-        if origHeader isnt editor.getTextInBufferRange headerRange
-          return illegalEdit "Header may not be changed."
-      if lc isnt editor.getLineCount()
-        return illegalEdit "Don't add or delete lines"
-      nextNormalMode vimState, -> cp = editor.createCheckpoint()
-    _commands.add editor.onDidDestroy ->
-      _commands.dispose()
-      resolve("force")
-
-nextNormalMode = (vimState, fn)->
-  return fn() if vimState.mode is 'normal'
-  once = vimState.onDidActivateMode ({mode})->
-    return unless mode is 'normal'
-    once.dispose()
-    fn()
+          return true
+  validator = ({changes})->
+    if changes.some (c)-> c.oldRange.start.row < 5
+      if origHeader isnt editor.getTextInBufferRange headerRange
+        return "Header may not be changed."
+    if lc isnt editor.getLineCount()
+      return "Don't add or delete lines"
+  editor.editMode {cls:'dir-opener-edit', validator, save, vimState}
 
 notEmpty = (marker)-> not marker.getBufferRange().isEmpty()
 
