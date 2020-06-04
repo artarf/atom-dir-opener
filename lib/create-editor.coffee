@@ -1,4 +1,4 @@
-"strict"
+"use strict"
 
 {TextEditor, TextBuffer} = require 'atom'
 path = require 'path'
